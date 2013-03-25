@@ -61,7 +61,7 @@ The output should look similar to this.
 	Wed Mar 20 10:35:28 2013 * done
 	[...]
 
-Some of my instances failed to migrate properly.
+Some of my instances failed to migrate properly. This seems to be related to this [bug](https://code.google.com/p/ganeti/issues/detail?id=297).
 
 	Wed Mar 20 10:33:16 2013 Migration failed, aborting
 	[...]
@@ -189,4 +189,4 @@ Rebalance the cluster
 
 At this point you probably want to rebalance your Ganeti cluser. The following blog post by Lance Albertson does a pretty good job at explaining this process.
 
-http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/
+[http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/](http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/)
