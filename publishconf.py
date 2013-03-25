@@ -6,6 +6,7 @@ sys.path.append('.')
 from pelicanconf import *
 
 SITEURL = 'http://blkperl.github.com'
+FEED_DOMAIN = 'http://blkperl.github.com'
 
 DELETE_OUTPUT_DIRECTORY = True
 
