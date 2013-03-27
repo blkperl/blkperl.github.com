@@ -1,5 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="http://blkperl.github.com/" rel="alternate"></link><link href="http://blkperl.github.com/feeds/all.atom.xml" rel="self"></link><id>http://blkperl.github.com/</id><updated>2013-03-23T12:00:00-07:00</updated><entry><title>Evacuating a Ganeti node for hardware diagnostics</title><link href="http://blkperl.github.com/evac-ganeti-node.html" rel="alternate"></link><updated>2013-03-23T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-03-23:evac-ganeti-node.html</id><summary type="html">&lt;p&gt;One of the nodes in our Ganeti cluster was hanging on lvs commands and some of the instances were hanging while they wait for IO. I decided to be proactive and live migrate all of the instances off the node in order to bring it down for some debugging.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2013-03-26T22:50:00-07:00</updated><entry><title>Replacing a Puppet CA Cert</title><link href="/replace-puppet-ca.html" rel="alternate"></link><updated>2013-03-26T22:50:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:,2013-03-26:replace-puppet-ca.html</id><summary type="html">&lt;p&gt;This is more of a story than a tutorial and I make no claims that this is the "correct" way to replace a Puppet CA cert but this is how we did it.&lt;/p&gt;
+&lt;p&gt;Our puppet ca cert was going to expire in about 18 hours so we set aside some time when no one else was working on other systems and madly searched the internet for tidbits of information to replace the cert.&lt;/p&gt;
+&lt;p&gt;In our environment we have a Puppet CA Server, a puppetmaster, and puppetdb/dashboard server and about 200 nix clients.&lt;/p&gt;
+&lt;h2&gt;Prep Work&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Stop all puppet agents.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If running the daemon the run &lt;code&gt;service puppet stop&lt;/code&gt; on all the clients and if running by cron then disable all the puppet crons. This is not necessary but it will prevent the clients from spamming logs while your replace the certs. It may also prevent some clients from getting into a weird limbo state.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Verify time is correct on all the puppetmasters.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If the servers are not in sync then the certs generated will not work. I would recommend NTP if your not already running it to keep all your machines in sync.&lt;/p&gt;
+&lt;h2&gt;Generate a new CA Cert&lt;/h2&gt;
+&lt;p&gt;On the puppet ca remove the expired cert.&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;rm&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;rf&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Add any alternate dns names to /etc/puppet/puppet.conf&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;dns_alt_names&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Review the puppet.conf docs for other CA settings you may want to set before moving on.&lt;/p&gt;
+&lt;h2&gt;Generate a new cert for the CA&lt;/h2&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;generate&lt;/span&gt; &lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Verify the new ca.pem and ca cert look correct.&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;openssl&lt;/span&gt; &lt;span class="n"&gt;x509&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;noout&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;in&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;certs&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pem&lt;/span&gt;
+&lt;span class="n"&gt;openssl&lt;/span&gt; &lt;span class="n"&gt;x509&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;noout&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;in&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;certs&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pem&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Specifically, the validity field should now be 5 years in the future. You can set the expiration date in puppet.conf before you generate the cert if you want a longer or shorter period.&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="n"&gt;openssl&lt;/span&gt; &lt;span class="n"&gt;x509&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;noout&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;in&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;certs&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pem&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;grep&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="n"&gt;validity&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;A&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;
+        &lt;span class="n"&gt;Validity&lt;/span&gt;
+            &lt;span class="n"&gt;Not&lt;/span&gt; &lt;span class="n"&gt;Before&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;25&lt;/span&gt; &lt;span class="mo"&gt;03&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;GMT&lt;/span&gt;
+            &lt;span class="n"&gt;Not&lt;/span&gt; &lt;span class="n"&gt;After&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;25&lt;/span&gt; &lt;span class="mo"&gt;03&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2018&lt;/span&gt; &lt;span class="n"&gt;GMT&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Restart apache.&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;service&lt;/span&gt; &lt;span class="n"&gt;apache2&lt;/span&gt; &lt;span class="n"&gt;restart&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Generate a new cert for each puppet master&lt;/h2&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# request a new cert on the puppetmaster&lt;/span&gt;
+&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;agent&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;test&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;dns_alt_names&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tassadar&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;tassadar&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+
+&lt;span class="cp"&gt;# on the ca server sign the cert&lt;/span&gt;
+&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;allow&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;dns&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;alt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;names&lt;/span&gt; &lt;span class="n"&gt;sign&lt;/span&gt; &lt;span class="n"&gt;tassadar&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+
+&lt;span class="cp"&gt;# restart apache on the puppet master&lt;/span&gt;
+&lt;span class="n"&gt;service&lt;/span&gt; &lt;span class="n"&gt;apache2&lt;/span&gt; &lt;span class="n"&gt;restart&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;At this point your puppet master if configured to be an agent of itself, should be able to run &lt;code&gt;puppet agent --test&lt;/code&gt; with no errors unless you are running puppetdb.&lt;/p&gt;
+&lt;h2&gt;Generate a new cert for puppetdb&lt;/h2&gt;
+&lt;p&gt;The &lt;a href="http://docs.puppetlabs.com/puppetdb/1.1/maintain_and_tune.html#redo-ssl-setup-after-changing-certificates"&gt;official docs&lt;/a&gt; did not work for us. We had to add some additional steps documented below and we filed a &lt;a href="https://projects.puppetlabs.com/issues/19904"&gt;bug&lt;/a&gt; to update the docs or fix the &lt;code&gt;puppetdb-ssl-setup&lt;/code&gt; command.&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# Remove the old puppetdb certs on the puppetdb server&lt;/span&gt;
+&lt;span class="n"&gt;rm&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;rf&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;etc&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppetdb&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;
+
+&lt;span class="cp"&gt;# Generate new puppetdb certs&lt;/span&gt;
+&lt;span class="n"&gt;puppetdb&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;setup&lt;/span&gt;
+
+&lt;span class="cp"&gt;# restart the service&lt;/span&gt;
+&lt;span class="n"&gt;service&lt;/span&gt; &lt;span class="n"&gt;puppetdb&lt;/span&gt; &lt;span class="n"&gt;restart&lt;/span&gt;
+
+&lt;span class="cp"&gt;# verify it restarts by watching the log (it may take a few minutes)&lt;/span&gt;
+&lt;span class="n"&gt;tail&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppetdb&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppetdb&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;log&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;At this point if you did everything correct, the puppetmaster should be able to checkin to itself as a client with no errors and be able to download a catalog.&lt;/p&gt;
+&lt;h2&gt;Request a cert for dashboard&lt;/h2&gt;
+&lt;p&gt;Excerpt from the &lt;a href="http://docs.puppetlabs.com/dashboard/manual/1.2/configuring.html"&gt;official docs&lt;/a&gt; for the 1.2 stable release of dashboard.&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# on the dashboard server&lt;/span&gt;
+&lt;span class="n"&gt;cd&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;usr&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;share&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;dashboard&lt;/span&gt;
+&lt;span class="n"&gt;rake&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;
+
+&lt;span class="cp"&gt;# on the ca server&lt;/span&gt;
+&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="n"&gt;sign&lt;/span&gt; &lt;span class="n"&gt;dashboard&lt;/span&gt;
+
+&lt;span class="cp"&gt;# restart apache on the dashboard server&lt;/span&gt;
+&lt;span class="n"&gt;service&lt;/span&gt; &lt;span class="n"&gt;apache2&lt;/span&gt; &lt;span class="n"&gt;restart&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Generate new certs for all your clients&lt;/h2&gt;
+&lt;p&gt;Note if any clients are offline during the process they will need a new cert generated and signed when they come back online.&lt;/p&gt;
+&lt;p&gt;We used a bash for loop that looked something like this.&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;cat&lt;/span&gt; &lt;span class="n"&gt;alltheclients&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;txt&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;xargs&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;P&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;I&lt;/span&gt; &lt;span class="n"&gt;box&lt;/span&gt; &lt;span class="n"&gt;ssh&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt; &lt;span class="n"&gt;box&lt;/span&gt; &lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;rm&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;fr&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;agent&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The key part in this bash one liner is removing &lt;code&gt;/var/lib/puppet/ssl&lt;/code&gt; and requesting a new cert.&lt;/p&gt;
+&lt;p&gt;Then on the puppet ca server we signed the new certs&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# For each client sign the new cert&lt;/span&gt;
+&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="n"&gt;sign&lt;/span&gt; &lt;span class="n"&gt;client2&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Or you can use the &lt;code&gt;--all&lt;/code&gt; flag&lt;/p&gt;
+&lt;p&gt;There are some security risks with doing this. Basically for the same reasons on why not to use autosign. Read Brice's &lt;a href="http://www.masterzen.fr/2010/11/14/puppet-ssl-explained/"&gt;blog&lt;/a&gt; for more information about Puppet and SSl.&lt;/p&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="n"&gt;sign&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;all&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;This was a really painful process and is poorly documented. A lot of the clients were left in a broken state and needed to be kicked because the original for loop failed (probably because we didn't turn off the agents first). About 3 hours after we begun we had most of the clients working again and we fixed some stragglers the next day.&lt;/p&gt;
+&lt;p&gt;If someone has a better/easier process for doing this, please blog about it or submit a pull request to the &lt;a href="http://docs.puppetlabs.com/contribute.html#editing-the-documentation"&gt;official docs&lt;/a&gt;.&lt;/p&gt;</summary><category term="puppet"></category><category term="openssl"></category></entry><entry><title>Evacuating a Ganeti node for hardware diagnostics</title><link href="/evac-ganeti-node.html" rel="alternate"></link><updated>2013-03-23T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:,2013-03-23:evac-ganeti-node.html</id><summary type="html">&lt;p&gt;One of the nodes in our Ganeti cluster was hanging on lvs commands and some of the instances were hanging while they wait for IO. I decided to be proactive and live migrate all of the instances off the node in order to bring it down for some debugging.&lt;/p&gt;
 &lt;p&gt;The following steps are how I brought the node offline with minimal downtime for production instances.&lt;/p&gt;
 &lt;h2&gt;Overview of our cluster&lt;/h2&gt;
 &lt;ul&gt;
@@ -49,7 +163,7 @@
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Some of my instances failed to migrate properly.&lt;/p&gt;
+&lt;p&gt;Some of my instances failed to migrate properly. This seems to be related to this &lt;a href="https://code.google.com/p/ganeti/issues/detail?id=297"&gt;bug&lt;/a&gt;.&lt;/p&gt;
 &lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;16&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;Migration&lt;/span&gt; &lt;span class="n"&gt;failed&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;aborting&lt;/span&gt;
 &lt;span class="p"&gt;[...]&lt;/span&gt;
 &lt;span class="n"&gt;Job&lt;/span&gt; &lt;span class="mi"&gt;52820&lt;/span&gt; &lt;span class="n"&gt;has&lt;/span&gt; &lt;span class="n"&gt;failed&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Failure&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;command&lt;/span&gt; &lt;span class="n"&gt;execution&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
@@ -170,4 +284,4 @@
 &lt;p&gt;And that is it, you can now take the node offline for diagnostics or to wait for new parts.&lt;/p&gt;
 &lt;h2&gt;Rebalance the cluster&lt;/h2&gt;
 &lt;p&gt;At this point you probably want to rebalance your Ganeti cluser. The following blog post by Lance Albertson does a pretty good job at explaining this process.&lt;/p&gt;
-&lt;p&gt;http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/&lt;/p&gt;</summary><category term="ganeti"></category><category term="kvm"></category></entry></feed>
+&lt;p&gt;&lt;a href="http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/"&gt;http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/&lt;/a&gt;&lt;/p&gt;</summary><category term="ganeti"></category><category term="kvm"></category></entry></feed>

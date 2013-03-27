@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="http://blkperl.github.com/" rel="alternate"></link><link href="http://blkperl.github.com/feeds/ganeti.atom.xml" rel="self"></link><id>http://blkperl.github.com/</id><updated>2013-03-23T12:00:00-07:00</updated><entry><title>Evacuating a Ganeti node for hardware diagnostics</title><link href="http://blkperl.github.com/evac-ganeti-node.html" rel="alternate"></link><updated>2013-03-23T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-03-23:evac-ganeti-node.html</id><summary type="html">&lt;p&gt;One of the nodes in our Ganeti cluster was hanging on lvs commands and some of the instances were hanging while they wait for IO. I decided to be proactive and live migrate all of the instances off the node in order to bring it down for some debugging.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="/" rel="alternate"></link><link href="/feeds/ganeti.atom.xml" rel="self"></link><id>/</id><updated>2013-03-23T12:00:00-07:00</updated><entry><title>Evacuating a Ganeti node for hardware diagnostics</title><link href="/evac-ganeti-node.html" rel="alternate"></link><updated>2013-03-23T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:,2013-03-23:evac-ganeti-node.html</id><summary type="html">&lt;p&gt;One of the nodes in our Ganeti cluster was hanging on lvs commands and some of the instances were hanging while they wait for IO. I decided to be proactive and live migrate all of the instances off the node in order to bring it down for some debugging.&lt;/p&gt;
 &lt;p&gt;The following steps are how I brought the node offline with minimal downtime for production instances.&lt;/p&gt;
 &lt;h2&gt;Overview of our cluster&lt;/h2&gt;
 &lt;ul&gt;
@@ -49,7 +49,7 @@
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Some of my instances failed to migrate properly.&lt;/p&gt;
+&lt;p&gt;Some of my instances failed to migrate properly. This seems to be related to this &lt;a href="https://code.google.com/p/ganeti/issues/detail?id=297"&gt;bug&lt;/a&gt;.&lt;/p&gt;
 &lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;16&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;Migration&lt;/span&gt; &lt;span class="n"&gt;failed&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;aborting&lt;/span&gt;
 &lt;span class="p"&gt;[...]&lt;/span&gt;
 &lt;span class="n"&gt;Job&lt;/span&gt; &lt;span class="mi"&gt;52820&lt;/span&gt; &lt;span class="n"&gt;has&lt;/span&gt; &lt;span class="n"&gt;failed&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Failure&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;command&lt;/span&gt; &lt;span class="n"&gt;execution&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
@@ -170,4 +170,4 @@
 &lt;p&gt;And that is it, you can now take the node offline for diagnostics or to wait for new parts.&lt;/p&gt;
 &lt;h2&gt;Rebalance the cluster&lt;/h2&gt;
 &lt;p&gt;At this point you probably want to rebalance your Ganeti cluser. The following blog post by Lance Albertson does a pretty good job at explaining this process.&lt;/p&gt;
-&lt;p&gt;http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/&lt;/p&gt;</summary><category term="ganeti"></category><category term="kvm"></category></entry></feed>
+&lt;p&gt;&lt;a href="http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/"&gt;http://www.lancealbertson.com/2011/05/rebalancing-ganeti-clusters/&lt;/a&gt;&lt;/p&gt;</summary><category term="ganeti"></category><category term="kvm"></category></entry></feed>
