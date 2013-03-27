@@ -10,7 +10,7 @@ This is more of a story than a tutorial and I make no claims that this is the "c
 
 Our puppet ca cert was going to expire in about 18 hours so we set aside some time when no one else was working on other systems and madly searched the internet for tidbits of information to replace the cert.
 
-In our environment we have a Puppet CA Server, a puppetmaster, and puppetdb/dashboard server.
+In our environment we have a Puppet CA Server, a puppetmaster, and puppetdb/dashboard server and about 200 nix clients.
 
 Prep Work
 ---------
@@ -21,8 +21,7 @@ If running the daemon the run `service puppet stop` on all the clients and if ru
 
 * Verify time is correct on all the puppetmasters.
 
-If the servers are not in sync then the certs generated will not work 
-I would recommend NTP if your not already running it to keep all your machines in sync.
+If the servers are not in sync then the certs generated will not work. I would recommend NTP if your not already running it to keep all your machines in sync.
 
 Generate a new CA Cert
 ----------------------
