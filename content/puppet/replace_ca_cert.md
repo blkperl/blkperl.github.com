@@ -17,11 +17,15 @@ Prep Work
 
 * Stop all puppet agents.
 
-If running the daemon the run `service puppet stop` on all the clients and if running by cron then disable all the puppet crons. This is not necessary but it will prevent the clients from spamming logs while your replace the certs. It may also prevent some clients from getting into a weird limbo state.
+If running the daemon, run `service puppet stop` on all the clients
+
+If running by cron then disable all the puppet crons.
+
+This is not necessary but it will prevent the clients from spamming logs while you replace the certs. It may also prevent some clients from getting into a weird limbo state.
 
 * Verify time is correct on all the puppetmasters.
 
-If the servers are not in sync then the certs generated will not work. I would recommend NTP if your not already running it to keep all your machines in sync.
+If the servers are not in sync then the certs generated will not work. I would recommend using NTP if you're not already running it.
 
 Generate a new CA Cert
 ----------------------
@@ -134,3 +138,4 @@ Summary
 This was a really painful process and is poorly documented. A lot of the clients were left in a broken state and needed to be kicked because the original for loop failed (probably because we didn't turn off the agents first). About 3 hours after we begun we had most of the clients working again and we fixed some stragglers the next day.
 
 If someone has a better/easier process for doing this, please blog about it or submit a pull request to the [official docs](http://docs.puppetlabs.com/contribute.html#editing-the-documentation).
+

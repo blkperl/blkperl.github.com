@@ -164,7 +164,7 @@ If this happens you can manually remove the old volume with the lvremove command
 
     # Log into the node
     ssh katana.cat.pdx.edu
-    sudo lvremove 9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta
+    lvremove /dev/mapper/ganeti-9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta
 
 Mark the node offline
 -----------------------
