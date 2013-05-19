@@ -1,4 +1,4 @@
-Title: Installing Sunray Software Server (SRSS) on Centos 5.x (x86_64)
+Title: Installing Sunray Software Server (SRSS) on Centos 5.x
 Date: 2013-05-18 21:35
 Tags: centos, sunray, oracle, rhel, redhat
 Category: centos
