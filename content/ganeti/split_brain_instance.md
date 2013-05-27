@@ -16,16 +16,19 @@ You can identify a split brain by the following.
 
 Degraded disks in gnt-instance info
 
+    :::bash
     on primary:   /dev/drbd1 (147:1) in sync, status *DEGRADED*
     on secondary: /dev/drbd9 (147:9) in sync, status *DEGRADED*
 
 StandAlone state on the primary (/proc/drbd)
 
+    :::bash
      1: cs:StandAlone ro:Primary/Unknown ds:UpToDate/DUnknown   r-----
         ns:969536 nr:0 dw:22564060 dr:43036016 al:242 bm:2652 lo:0 pe:0 ua:0 ap:0 ep:1 wo:f oos:254024
 
 StandAlone state on the secondary (/proc/drbd)
 
+    :::bash
     9: cs:StandAlone ro:Primary/Unknown ds:UpToDate/DUnknown   r-----
         ns:0 nr:969536 dw:24185104 dr:996 al:0 bm:1293 lo:0 pe:0 ua:0 ap:0 ep:1 wo:f oos:0
 
@@ -37,22 +40,25 @@ Recreate the secondary
 
 (assuming you think the primary is healthy)
 
+    :::bash
     # replace $another_node with any node that is not the primary or secondary
-    gnt-instance replace-disks -n  $another_node pika.cat.pdx.edu
+    gnt-instance replace-disks -n $another_node $instance
 
 Wait for disks to re-sync
 ------------------------
 
 You can watch the progress by looking at /proc/drbd
 
+    :::bash
     1: cs:SyncSource ro:Primary/Secondary ds:UpToDate/Inconsistent C r-----
         ns:16437312 nr:0 dw:22602340 dr:59475304 al:256 bm:3653 lo:1 pe:123 ua:64 ap:0 ep:1 wo:f oos:4555336
-            [==============>.....] sync'ed: 78.3% (4448/20480)Mfinish: 0:01:14 speed: 61,144 (58,212) K/sec
+            [==============>.....] synced: 78.3% (4448/20480)Mfinish: 0:01:14 speed: 61,144 (58,212) K/sec
 
 Verify the disks now
 ----------------
 
-    dirk:~# gnt-instance info $instance | grep drbd
+    :::bash
+    gnt-instance info $instance | grep drbd
       Disk template: drbd
         - disk/0: drbd8, size 20.0G
           on primary:   /dev/drbd1 (147:1) in sync, status ok

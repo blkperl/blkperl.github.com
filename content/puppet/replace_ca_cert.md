@@ -32,6 +32,7 @@ Generate a new CA Cert
 
 On the puppet ca remove the expired cert.
 
+    :::bash
     rm -rf /var/lib/puppet/ssl
 
 Add any alternate dns names to /etc/puppet/puppet.conf
@@ -43,27 +44,32 @@ Review the puppet.conf docs for other CA settings you may want to set before mov
 Generate a new cert for the CA
 ------------------------------
 
+    :::bash
     puppet cert --generate zeratul.cat.pdx.edu
 
 Verify the new ca.pem and ca cert look correct.
 
+    :::bash
     openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem
     openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/zeratul.cat.pdx.edu.pem
 
 Specifically, the validity field should now be 5 years in the future. You can set the expiration date in puppet.conf before you generate the cert if you want a longer or shorter period.
 
-    $ openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem | grep -i validity -A 2
+    :::bash
+    openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem | grep -i validity -A 2
             Validity
                 Not Before: Mar 25 03:20:40 2013 GMT
                 Not After : Mar 25 03:20:40 2018 GMT
 
 Restart apache.
 
+    :::bash
     service apache2 restart
 
 Generate a new cert for each puppet master
 ------------------------------------------
 
+    :::bash
     # request a new cert on the puppetmaster
     puppet agent --test --dns_alt_names=tassadar,tassadar.cat.pdx.edu,puppet,puppet.cat.pdx.edu
 
@@ -80,6 +86,7 @@ Generate a new cert for puppetdb
 
 The [official docs](http://docs.puppetlabs.com/puppetdb/1.1/maintain_and_tune.html#redo-ssl-setup-after-changing-certificates) did not work for us. We had to add some additional steps documented below and we filed a [bug](https://projects.puppetlabs.com/issues/19904) to update the docs or fix the `puppetdb-ssl-setup` command.
 
+    :::bash
     # Remove the old puppetdb certs on the puppetdb server
     rm -rf /etc/puppetdb/ssl
 
@@ -99,6 +106,7 @@ Request a cert for dashboard
 
 Excerpt from the [official docs](http://docs.puppetlabs.com/dashboard/manual/1.2/configuring.html) for the 1.2 stable release of dashboard.
 
+    :::bash
     # on the dashboard server
     cd /usr/share/puppet-dashboard
     rake cert:request
@@ -116,12 +124,14 @@ Note if any clients are offline during the process they will need a new cert gen
 
 We used a bash for loop that looked something like this.
 
+    :::bash
     cat alltheclients.txt | xargs -P 10 -n 1 -I box ssh -4 box 'rm -fr /var/lib/puppet/ssl && puppet agent -t'
 
 The key part in this bash one liner is removing `/var/lib/puppet/ssl` and requesting a new cert.
 
 Then on the puppet ca server we signed the new certs
 
+    :::bash
     # For each client sign the new cert
     puppet cert sign client2.cat.pdx.edu
 
@@ -129,6 +139,7 @@ Or you can use the `--all` flag
 
  There are some security risks with doing this. Basically for the same reasons on why not to use autosign. Read Brice's [blog](http://www.masterzen.fr/2010/11/14/puppet-ssl-explained/) for more information about Puppet and SSl.
 
+    :::bash
     puppet cert sign --all
 
 

@@ -11,12 +11,14 @@ In this example we removed a custom IDR patch provided by Oracle.
 Check to see if the patch is installed
 --------------------------------------
 
+    :::bash
     caerbannog# showrev -p | grep 148363
     Patch: IDR148363-26 Obsoletes:  Requires: 147441-26 Incompatibles: 147441-27 Packages: SUNWnfsckr, SUNWzfskr, SUNWzfsu, SUNWzfsr
 
 Remove the patch with patchrm
 -----------------------------
 
+    :::bash
     caerbannog# patchrm IDR148363-26
     Validating patches...
 

@@ -18,6 +18,7 @@ Install LXC
 
 On Ubuntu installing LXC is easy and the package comes with working Ubuntu and Debian templates.
 
+    :::bash
     sudo apt-get install lxc
 
 
@@ -26,6 +27,7 @@ Create a puppet master
 
 The first thing we need is a puppet master. To do this we are going to use the lxc-create command to create a minimal Ubuntu Precise instance.
 
+    :::bash
     # Create a fresh precise minimal install
     lxc-create -n pdxpuppet-master -t ubuntu -- --release=precise
 
@@ -46,19 +48,20 @@ Configure your puppet master
 Now we need to configure our new instance to be a puppet master.
 
 
-     # Become the root user
-     sudo -i
+    :::bash
+    # Become the root user
+    sudo -i
 
-     # Install wget
-     apt-get install wget
+    # Install wget
+    apt-get install wget
 
-     # Install the puppetlabs apt repository
-     wget http://apt.puppetlabs.com/puppetlabs-release-precise.deb
-     dpkg -i puppetlabs-release-precise.deb
-     apt-get update
+    # Install the puppetlabs apt repository
+    wget http://apt.puppetlabs.com/puppetlabs-release-precise.deb
+    dpkg -i puppetlabs-release-precise.deb
+    apt-get update
 
-     # Install the webrick puppetmaster
-     apt-get install puppet puppetmaster
+    # Install the webrick puppetmaster
+    apt-get install puppet puppetmaster
 
 The webrick puppetmaster is not recommended for production use. At this point you can choose to configure Apache and [Passenger](http://docs.puppetlabs.com/guides/passenger.html) or an alternative.
 
@@ -67,6 +70,7 @@ Create a puppet client
 
 Next we need a puppet client. The process will be almost identical to creating our puppet master.
 
+    :::bash
     # Create a fresh precise minimal install
     lxc-create -n pdxpuppet-client0 -t ubuntu -- --release=precise
 
@@ -87,6 +91,7 @@ Next we need to configure our client to know about the puppet master.
 Replace 10.0.3.118 with the ip of your puppetmaster
 
 
+    :::bash
     # Become the root user
     sudo -i
 
@@ -105,6 +110,7 @@ At this stage you can add any other useful tools or configuration. I usually ins
 
 After you're finished configuring the client turn it off.
 
+    :::bash
     lxc-stop -n pdxpuppet-client0
 
 
@@ -113,6 +119,7 @@ Configure Puppet Autosigning on your master
 
 This next step is for convenience. If you want to avoid signing certs in your development environment you can turn on auto signing.
 
+    :::bash
     # On your puppetmaster
 
     # Allow hosts with domain name lan
@@ -135,9 +142,9 @@ Add a node definition to your site.pp
 
 Now we need to make a node definition for our client. By using a regex we can allow client 0 through client 9 to connect.
 
-On your puppet master add the following to your site.pp
+On your puppet master add the following to /etc/puppet/manifests/site.pp
 
-    # /etc/puppet/manifests/site.pp
+    :::puppet
     node /pdxpuppet-client[0-9]/ {
 
       # add code here
@@ -149,6 +156,7 @@ Clone more clients using client0
 
 Now we X more clients. For now we will create 5 more.
 
+    :::bash
     # LXC will make an exact copy and tweak the network configs
     for i in 1 2 3 4 5; do lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client$i ; done
 

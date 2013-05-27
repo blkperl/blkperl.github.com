@@ -13,6 +13,7 @@ The SunRays we have are the SunRay 2 model updated with the latest firmware.
 Download the software from Oracle's support portal (requires login)
 -------------------------------------------------------------------
 
+    :::bash
     cd /opt/
     # download files from Oracle's website
     unzip V37034-01.zip
@@ -21,6 +22,7 @@ Download the software from Oracle's support portal (requires login)
 Install the dependencies
 ------------------------
 
+    :::bash
     yum install glib dhcp openldap-clients tftp-server libXp libXfont.i386 openmotif22 openssl compat-libstdc++-33 libusb-devel compat-openldap kernel-devel gdbm.i386 gcc openmotif.i386 sssd-client.i386
 
 If you are not using sssd you will need to install the nscd.i386 package.
@@ -29,6 +31,7 @@ If you are not using sssd you will need to install the nscd.i386 package.
 Install the firmware
 --------------------
 
+    :::bash
     cd /opt/sros_11.1.1.0/
     ./utfwinstall 
     Installing Sun Ray Operating Software 11.1.1.0
@@ -44,6 +47,7 @@ Install the firmware
 Install the bundled JRE and Apache Tomcat
 -----------------------------------------
 
+    :::bash
     cd /opt/srs_5.4.0.0-Linux.i386/Supplemental/Java_Runtime_Environment/Linux
     sh jre-6u41-linux-i586.bin 
     mv jre1.6.0_41/ /opt/
@@ -56,6 +60,7 @@ Install the bundled JRE and Apache Tomcat
 Install the Sunray Server Software
 ---------------------------
 
+    :::bash
     cd /opt/srs_5.4.0.0-Linux.i386
     ./utsetup
 
@@ -124,6 +129,7 @@ If the services are not running on reboot
 
 You can manually start them with:
 
+    :::bash
     /opt/SUNWut/sbin/utadm -L on
     /opt/SUNWut/sbin/utstart
 
@@ -150,6 +156,7 @@ Debugging
 
 The following two log files were especially helpful in debugging problems.
 
+    :::bash
     tail -f /var/opt/SUNWut/log/messages
     tail -f /var/log/autholog
 
