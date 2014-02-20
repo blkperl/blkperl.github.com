@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Removing a patch from Solaris 10</title>
+        <link rel="stylesheet" href="http://blkperl.github.com/theme/css/main.css" />
+        <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="zfs snapshot blkperl/dev/brain@Today Atom Feed" />
+
+        <!--[if IE]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="http://blkperl.github.com/">zfs snapshot blkperl/dev/brain@Today </a></h1>
+                <nav><ul>
+                    <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
+                    <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
+                    <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
+                    <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
+                    <li class="active"><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="http://blkperl.github.com/remove_solaris_patch.html" rel="bookmark"
+           title="Permalink to Removing a patch from Solaris 10">Removing a patch from Solaris 10</a></h1>
+<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2013-03-27T12:00:00">
+                Wed 27 March 2013
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a></p>
+</footer><!-- /.post-info -->      <p>In this example we removed a custom IDR patch provided by Oracle.</p>
+<h2>Check to see if the patch is installed</h2>
+<div class="highlight"><pre>caerbannog# showrev -p | grep 148363
+Patch: IDR148363-26 Obsoletes:  Requires: 147441-26 Incompatibles: 147441-27 Packages: SUNWnfsckr, SUNWzfskr, SUNWzfsu, SUNWzfsr
+</pre></div>
+
+
+<h2>Remove the patch with patchrm</h2>
+<div class="highlight"><pre>caerbannog# patchrm IDR148363-26
+Validating patches...
+
+Loading patches installed on the system...
+
+Done!
+
+Checking patches that you specified <span class="k">for </span>removal.
+
+Done!
+
+Approved patches will be removed in this order:
+
+IDR148363-26
+Preparing checklist <span class="k">for </span>non-global zone check...
+
+Checking non-global zones...
+
+
+This patch passes non-global zone check.
+IDR148363-26
+
+
+Summary <span class="k">for </span>zones:
+
+Zone crisco
+
+Rejected patches:
+None.
+tches that passed the dependency check:
+None.
+
+
+Removing patches from non-global zones
+
+Removing patches from zone crisco
+Removing patch IDR148363-26...
+Done!
+
+Checking installed patches...
+
+Backing out patch IDR148363-26...
+
+Patch IDR148363-26 has been backed out.
+
+
+Removing patches from zone nt4
+
+Removing patches from zone sfw
+
+Removing patches from global zone
+Removing patch IDR148363-26...
+
+Checking installed patches...
+
+Executing prebackout script...
+Backing out patch IDR148363-26...
+
+Executing postbackout script...
+Patch IDR148363-26 has been backed out.
+
+Done!
+</pre></div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="http://twitter.com/pdx_blkperl">twitter</a></li>
+                            <li><a href="http://github.com/blkperl">github</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

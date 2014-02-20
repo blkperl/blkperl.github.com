@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="http://blkperl.github.com/" rel="alternate"></link><link href="http://blkperl.github.com/feeds/lxc.atom.xml" rel="self"></link><id>http://blkperl.github.com/</id><updated>2013-05-26T16:00:00-07:00</updated><entry><title>Creating a Puppet development environment with LXC</title><link href="http://blkperl.github.com/puppet-dev-with-lxc.html" rel="alternate"></link><updated>2013-05-26T16:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-05-26:puppet-dev-with-lxc.html</id><summary type="html">&lt;p&gt;This blog post is about my development setup on my laptop for testing out new software. You will learn how you can easily create LXC containers and connect them to a puppet master in about 20 minutes using the awesome cloning features of LXC.&lt;/p&gt;
+&lt;p&gt;LXC is a lightweight container virtualization technology very similar to Solaris zones and FreeBSD jails and is availible on most Linux distributions. To learn more and read the docs check out the links at the bottom of the post. &lt;/p&gt;
+&lt;p&gt;The first step is to install it.&lt;/p&gt;
+&lt;h2&gt;Install LXC&lt;/h2&gt;
+&lt;p&gt;On Ubuntu installing LXC is easy and the package comes with working Ubuntu and Debian templates.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo apt-get install lxc
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Create a puppet master&lt;/h2&gt;
+&lt;p&gt;The first thing we need is a puppet master. To do this we are going to use the lxc-create command to create a minimal Ubuntu Precise instance.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Create a fresh precise minimal install&lt;/span&gt;
+lxc-create -n pdxpuppet-master -t ubuntu -- --release&lt;span class="o"&gt;=&lt;/span&gt;precise
+
+&lt;span class="c"&gt;# Start your puppet master&lt;/span&gt;
+lxc-start -n pdxpuppet-master -d
+
+&lt;span class="c"&gt;# Determine the ip address&lt;/span&gt;
+lxc-ls --fancy
+
+&lt;span class="c"&gt;# Log in with the default username: ubuntu and password: ubuntu&lt;/span&gt;
+ssh ubuntu@10.0.3.118
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You may need to wait a few seconds for the container to start before the ip address will be displayed in the output of lxc-ls --fancy&lt;/p&gt;
+&lt;h2&gt;Configure your puppet master&lt;/h2&gt;
+&lt;p&gt;Now we need to configure our new instance to be a puppet master.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Become the root user&lt;/span&gt;
+sudo -i
+
+&lt;span class="c"&gt;# Install wget&lt;/span&gt;
+apt-get install wget
+
+&lt;span class="c"&gt;# Install the puppetlabs apt repository&lt;/span&gt;
+wget http://apt.puppetlabs.com/puppetlabs-release-precise.deb
+dpkg -i puppetlabs-release-precise.deb
+apt-get update
+
+&lt;span class="c"&gt;# Install the webrick puppetmaster&lt;/span&gt;
+apt-get install puppet puppetmaster
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The webrick puppetmaster is not recommended for production use. At this point you can choose to configure Apache and &lt;a href="http://docs.puppetlabs.com/guides/passenger.html"&gt;Passenger&lt;/a&gt; or an alternative.&lt;/p&gt;
+&lt;h2&gt;Create a puppet client&lt;/h2&gt;
+&lt;p&gt;Next we need a puppet client. The process will be almost identical to creating our puppet master.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Create a fresh precise minimal install&lt;/span&gt;
+lxc-create -n pdxpuppet-client0 -t ubuntu -- --release&lt;span class="o"&gt;=&lt;/span&gt;precise
+
+&lt;span class="c"&gt;# Start your puppet client0&lt;/span&gt;
+lxc-start -n pdxpuppet-client0 -d
+
+&lt;span class="c"&gt;# Determine the ip address&lt;/span&gt;
+lxc-ls --fancy
+
+&lt;span class="c"&gt;# Log in with the default username: ubuntu and password: ubuntu&lt;/span&gt;
+ssh ubuntu@10.0.3.119
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Configure the client&lt;/h2&gt;
+&lt;p&gt;Next we need to configure our client to know about the puppet master.&lt;/p&gt;
+&lt;p&gt;Replace 10.0.3.118 with the ip of your puppetmaster&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Become the root user&lt;/span&gt;
+sudo -i
+
+&lt;span class="c"&gt;# In this environment we don&amp;#39;t have DNS so add the puppet master to /etc/hosts&lt;/span&gt;
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;10.0.3.118 puppet puppet.lan&amp;quot;&lt;/span&gt; &amp;gt;&amp;gt; /etc/hosts
+
+&lt;span class="c"&gt;# Install puppet&lt;/span&gt;
+apt-get install puppet
+
+&lt;span class="c"&gt;# Make puppet start on boot&lt;/span&gt;
+/bin/sed -i &lt;span class="s1"&gt;&amp;#39;s/START\=no/START\=yes/&amp;#39;&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;/etc/default/puppet&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;At this stage you can add any other useful tools or configuration. I usually install vim, git and ssh keys for root login from my laptop.&lt;/p&gt;
+&lt;p&gt;After you're finished configuring the client turn it off.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;lxc-stop -n pdxpuppet-client0
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Configure Puppet Autosigning on your master&lt;/h2&gt;
+&lt;p&gt;This next step is for convenience. If you want to avoid signing certs in your development environment you can turn on auto signing.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# On your puppetmaster&lt;/span&gt;
+
+&lt;span class="c"&gt;# Allow hosts with domain name lan&lt;/span&gt;
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;*.lan&amp;quot;&lt;/span&gt; &amp;gt;&amp;gt; /etc/puppet/autosign.conf
+
+&lt;span class="c"&gt;# Restart the puppet master&lt;/span&gt;
+service puppetmaster restart
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Auto signing is described in the docs &lt;a href="http://docs.puppetlabs.com/guides/configuring.html#autosignconf"&gt;here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;There are security concerns with auto signing as described in the docs.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="s"&gt;&amp;quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In this case my LXC environment is only on my laptop so I'm choosing to enable autosigining.&lt;/p&gt;
+&lt;h2&gt;Add a node definition to your site.pp&lt;/h2&gt;
+&lt;p&gt;Now we need to make a node definition for our client. By using a regex we can allow client 0 through client 9 to connect.&lt;/p&gt;
+&lt;p&gt;On your puppet master add the following to /etc/puppet/manifests/site.pp&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;node&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="na"&gt;pdxpuppet&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="na"&gt;client&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="c"&gt;&lt;/span&gt;
+
+&lt;span class="c"&gt;  # add code here&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Clone more clients using client0&lt;/h2&gt;
+&lt;p&gt;Now we X more clients. For now we will create 5 more.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# LXC will make an exact copy and tweak the network configs&lt;/span&gt;
+&lt;span class="k"&gt;for &lt;/span&gt;i in 1 2 3 4 5; &lt;span class="k"&gt;do &lt;/span&gt;lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; ; &lt;span class="k"&gt;done&lt;/span&gt;
+
+&lt;span class="c"&gt;# Start your new machines&lt;/span&gt;
+&lt;span class="k"&gt;for &lt;/span&gt;i in 1 2 3 4 5; &lt;span class="k"&gt;do &lt;/span&gt;lxc-start -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; ; &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;After you're clients boot they should automatically check in with the puppetmaster and request certs.&lt;/p&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;At this point you have successfully configured a puppet master and five puppet clients that are ready for testing out new code. If you need more clients you can clone pdxpuppet-client0 and generate as many as you need and they will automatically connect to the puppet master on boot.&lt;/p&gt;
+&lt;h2&gt;Resources&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="http://en.wikipedia.org/wiki/LXC"&gt;http://en.wikipedia.org/wiki/LXC&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="http://lxc.sourceforge.net/"&gt;http://lxc.sourceforge.net/&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="https://help.ubuntu.com/12.04/serverguide/lxc.html"&gt;https://help.ubuntu.com/12.04/serverguide/lxc.html&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;</summary><category term="lxc"></category><category term="puppet"></category></entry></feed>

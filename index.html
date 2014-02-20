@@ -1,207 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-        <title>zfs snapshot blkperl/dev/brain@Today</title>
         <meta charset="utf-8" />
-        <link rel="stylesheet" href="./theme/css/main.css" type="text/css" />
-                <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="zfs snapshot blkperl/dev/brain@Today Atom Feed" />
-                
+        <title>zfs snapshot blkperl/dev/brain@Today</title>
+        <link rel="stylesheet" href="http://blkperl.github.com/theme/css/main.css" />
+        <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="zfs snapshot blkperl/dev/brain@Today Atom Feed" />
+
         <!--[if IE]>
-                <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-
-        <!--[if lte IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href="./css/ie.css"/>
-                <script src="./js/IE8.js" type="text/javascript"></script><![endif]-->
-
-        <!--[if lt IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href="./css/ie6.css"/><![endif]-->
-
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
 </head>
 
 <body id="index" class="home">
         <header id="banner" class="body">
-                <h1><a href="./">zfs snapshot blkperl/dev/brain@Today </a></h1>
+                <h1><a href="http://blkperl.github.com/">zfs snapshot blkperl/dev/brain@Today </a></h1>
                 <nav><ul>
-                                                                                                    <li ><a href="./category/ganeti.html">ganeti</a></li>
-                                    <li ><a href="./category/puppet.html">puppet</a></li>
-                                </ul></nav>
+                    <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
+                    <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
+                    <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
+                    <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
+                    <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
+                </ul></nav>
         </header><!-- /#banner -->
-                
-            
 
-                            <aside id="featured" class="body">
+            <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="./replace-puppet-ca.html">Replacing a Puppet CA Cert</a></h1> 
-                    <footer class="post-info">
+                    <h1 class="entry-title"><a href="http://blkperl.github.com/vagrant_solaris11.html">Using Vagrant with Solaris 11</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2014-02-19T23:23:00">
+                Wed 19 February 2014
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a><a href="http://blkperl.github.com/tag/vagrant.html">vagrant</a></p>
+</footer><!-- /.post-info --><p>I finally got Solaris 11 vagrant boxes working! </p>
+<p>First you need to download a Solaris 11 iso from Oracle's website. Then use packer to build a solaris11 box file which is explained in Alan Chalmer's <a href="http://resilvered.blogspot.com/2014/02/solaris-vagrant-packer-and-base-box.html">blog</a>.</p>
+<p>Next we need a Vagrantfile, you can pull down mine and modify it for your needs. Then create an iso directory and place your solaris box image in it.</p>
+<div class="highlight"><pre>git clone https://gist.github.com/9108604.git
+mkdir iso
+cp /packer/build/directory/packer_solaris-11.1-amd64_virtualbox.box iso/
+</pre></div>
+
+
+<p>Our Vagrantfile looks like this. To mirror a production setup we are creating a secondary disk on the IDE controller to mirror rpool. Then we create a SATA controller and attach six 1G disks.</p>
+<div class="gist">
+    <script src='https://gist.github.com/9108604.js'></script>
+    <noscript>
+        <pre><code># -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  diskroot = "/home/#{ENV['USER']}/VirtualBox\ VMs/"
+
+  config.vm.define "sunosfiler" do |v|
+    v.vm.box = "solaris-11.1"
+    v.vm.hostname = "sunosfiler"
+    v.vm.network :private_network, ip: "192.168.2.13"
+    v.vm.box_url = "iso/packer_solaris-11.1-amd64_virtualbox.box"
+    v.vm.provider :virtualbox do |vb|
+      # Create a sata controller for our disks
+      vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", 'sata']
+      # Create a second disk for the rpool mirror
+      diskname = "#{diskroot}/sunosfiler-ide1.vdi"
+      vb.customize ['createhd', '--filename', diskname, '--size', 8 * 1024]
+      vb.customize ['storageattach', :id, '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', diskname]
+    end
+    # Create six disks for a zpool
+    v.vm.provider :virtualbox do |vb|
+      ["1","2","3","4","5","6"].each do |disk|
+       diskname = "#{diskroot}/sunosfiler-sata#{disk}.vdi"
+       vb.customize ['createhd', '--filename', diskname, '--size', 1024]
+       vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk, '--device', 0, '--type', 'hdd', '--medium', diskname]
+      end
+    end
+  end
+end</code></pre>
+    </noscript>
+</div>
+<p>Now that we have everything we need we can start the vm with vagrant up.</p>
+<div class="highlight"><pre>vagrant up
+Bringing machine <span class="s1">&#39;sunosfiler&#39;</span> up with <span class="s1">&#39;virtualbox&#39;</span> provider...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Box <span class="s1">&#39;solaris-11.1&#39;</span> was not found. Fetching box from specified URL <span class="k">for</span>
+the provider <span class="s1">&#39;virtualbox&#39;</span>. Note that <span class="k">if </span>the URL does not have
+a box <span class="k">for </span>this provider, you should interrupt Vagrant now and add
+the box yourself. Otherwise Vagrant will attempt to download the
+full box prior to discovering this error.
+Downloading or copying the box...
+Extracting box...te: 25.0M/s, Estimated <span class="nb">time </span>remaining: 0:00:01<span class="o">)</span>
+Successfully added box <span class="s1">&#39;solaris-11.1&#39;</span> with provider <span class="s1">&#39;virtualbox&#39;</span>!
+<span class="o">[</span>sunosfiler<span class="o">]</span> Importing base box <span class="s1">&#39;solaris-11.1&#39;</span>...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Matching MAC address <span class="k">for </span>NAT networking...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Setting the name of the VM...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Setting the name of the VM...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Clearing any previously <span class="nb">set </span>forwarded ports...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Creating shared folders metadata...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Clearing any previously <span class="nb">set </span>network interfaces...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Preparing network interfaces based on configuration...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Forwarding ports...
+<span class="o">[</span>sunosfiler<span class="o">]</span> -- <span class="nv">22</span> <span class="o">=</span>&gt; 2222 <span class="o">(</span>adapter 1<span class="o">)</span>
+<span class="o">[</span>sunosfiler<span class="o">]</span> Running any VM customizations...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Booting VM...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Waiting <span class="k">for </span>VM to boot. This can take a few minutes.
+<span class="o">[</span>sunosfiler<span class="o">]</span> VM booted and ready <span class="k">for </span>use!
+<span class="o">[</span>sunosfiler<span class="o">]</span> Setting hostname...
+</pre></div>
+
+
+<p>Now we login and become the root user.</p>
+<div class="highlight"><pre>vagrant ssh
+sudo -i
+</pre></div>
+
+
+<p>Next let's take a look at the disks that we attached. You can use the format command to list the availible disks.</p>
+<div class="highlight"><pre>format
+Searching <span class="k">for </span>disks...done
+
+
+AVAILABLE DISK SELECTIONS:
+       0. c7d0 &lt;VBOX HAR-bafb5063-0735aa9-0001-8.00GB&gt;
+          /pci@0,0/pci-ide@1,1/ide@0/cmdk@0,0
+       1. c8d0 &lt;VBOX HAR-196ca772-16ab95f-0001 cyl 4093 alt 2 hd 128 sec 32&gt;
+          /pci@0,0/pci-ide@1,1/ide@1/cmdk@0,0
+       2. c9t1d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+          /pci@0,0/pci8086,2829@d/disk@1,0
+       3. c9t2d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+          /pci@0,0/pci8086,2829@d/disk@2,0
+       4. c9t3d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+          /pci@0,0/pci8086,2829@d/disk@3,0
+       5. c9t4d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+          /pci@0,0/pci8086,2829@d/disk@4,0
+       6. c9t5d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+          /pci@0,0/pci8086,2829@d/disk@5,0
+       7. c9t6d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+          /pci@0,0/pci8086,2829@d/disk@6,0
+Specify disk <span class="o">(</span>enter its number<span class="o">)</span>:
+</pre></div>
+
+
+<p>You can see that c7d0 and c8d0 are our 8G system disks attached to the IDE controller. Let's attach c8d0 to the rpool and make a mirror.</p>
+<div class="highlight"><pre>zpool attach rpool c7d0 c8d0
+Make sure to <span class="nb">wait </span><span class="k">until </span>resilver is <span class="k">done </span>before rebooting.
+</pre></div>
+
+
+<p>If we examine the pool now, we can see it resilvering.</p>
+<div class="highlight"><pre><span class="nx">zpool</span> <span class="nx">status</span> <span class="nx">rpool</span>
+  <span class="nx">pool</span><span class="o">:</span> <span class="nx">rpool</span>
+ <span class="nx">state</span><span class="o">:</span> <span class="nx">DEGRADED</span>
+<span class="nx">status</span><span class="o">:</span> <span class="nx">One</span> <span class="nx">or</span> <span class="nx">more</span> <span class="nx">devices</span> <span class="nx">is</span> <span class="nx">currently</span> <span class="nx">being</span> <span class="nx">resilvered</span><span class="p">.</span>  <span class="nx">The</span> <span class="nx">pool</span> <span class="nx">will</span>
+        <span class="k">continue</span> <span class="nx">to</span> <span class="kd">function</span> <span class="k">in</span> <span class="nx">a</span> <span class="nx">degraded</span> <span class="nx">state</span><span class="p">.</span>
+<span class="nx">action</span><span class="o">:</span> <span class="nx">Wait</span> <span class="k">for</span> <span class="nx">the</span> <span class="nx">resilver</span> <span class="nx">to</span> <span class="nx">complete</span><span class="p">.</span>
+        <span class="nx">Run</span> <span class="s1">&#39;zpool status -v&#39;</span> <span class="nx">to</span> <span class="nx">see</span> <span class="nx">device</span> <span class="nx">specific</span> <span class="nx">details</span><span class="p">.</span>
+  <span class="nx">scan</span><span class="o">:</span> <span class="nx">resilver</span> <span class="k">in</span> <span class="nx">progress</span> <span class="nx">since</span> <span class="nx">Thu</span> <span class="nx">Feb</span> <span class="mi">20</span> <span class="mi">19</span><span class="o">:</span><span class="mi">14</span><span class="o">:</span><span class="mi">00</span> <span class="mi">2014</span>
+    <span class="mi">809</span><span class="nx">M</span> <span class="nx">scanned</span> <span class="nx">out</span> <span class="nx">of</span> <span class="mf">3.69</span><span class="nx">G</span> <span class="nx">at</span> <span class="mf">38.5</span><span class="nx">M</span><span class="o">/</span><span class="nx">s</span><span class="p">,</span> <span class="mi">0</span><span class="nx">h1m</span> <span class="nx">to</span> <span class="nx">go</span>
+    <span class="mi">777</span><span class="nx">M</span> <span class="nx">resilvered</span><span class="p">,</span> <span class="mf">21.40</span><span class="o">%</span> <span class="nx">done</span>
+<span class="nx">config</span><span class="o">:</span>
+
+        <span class="nx">NAME</span>        <span class="nx">STATE</span>     <span class="nx">READ</span> <span class="nx">WRITE</span> <span class="nx">CKSUM</span>
+        <span class="nx">rpool</span>       <span class="nx">DEGRADED</span>     <span class="mi">0</span>     <span class="mi">0</span>     <span class="mi">0</span>
+          <span class="nx">mirror</span><span class="o">-</span><span class="mi">0</span>  <span class="nx">DEGRADED</span>     <span class="mi">0</span>     <span class="mi">0</span>     <span class="mi">0</span>
+            <span class="nx">c7d0</span>    <span class="nx">ONLINE</span>       <span class="mi">0</span>     <span class="mi">0</span>     <span class="mi">0</span>
+            <span class="nx">c8d0</span>    <span class="nx">DEGRADED</span>     <span class="mi">0</span>     <span class="mi">0</span>     <span class="mi">0</span>  <span class="p">(</span><span class="nx">resilvering</span><span class="p">)</span>
+
+<span class="nx">errors</span><span class="o">:</span> <span class="nx">No</span> <span class="nx">known</span> <span class="nx">data</span> <span class="nx">errors</span>
+</pre></div>
+
+
+<p>After a few minutes it should be fully online. Then we need to install grub on the new disk</p>
+<div class="highlight"><pre>bootadm install-bootloader -P rpool
+</pre></div>
+
+
+<p>Now that our root pool is setup we can move on to our storage pool. I choose to mirror every disk but you can choose whatever raid configuration you prefer.</p>
+<div class="highlight"><pre>zpool create stark mirror c9t1d0 c9t2d0 mirror c9t3d0 c9t4d0 mirror c9t5d0 c9t6d0
+zpool status stark
+  pool: stark
+ state: ONLINE
+  scan: none requested
+config:
+
+        NAME        STATE     READ WRITE CKSUM
+        stark       ONLINE       0     0     0
+          mirror-0  ONLINE       0     0     0
+            c9t1d0  ONLINE       0     0     0
+            c9t2d0  ONLINE       0     0     0
+          mirror-1  ONLINE       0     0     0
+            c9t3d0  ONLINE       0     0     0
+            c9t4d0  ONLINE       0     0     0
+          mirror-2  ONLINE       0     0     0
+            c9t5d0  ONLINE       0     0     0
+            c9t6d0  ONLINE       0     0     0
+
+errors: No known data errors
+</pre></div>
+
+
+<p>At this point our storage is configured and we can move on to creating filesystems, setting up services, or running tests.</p>
+<p>Happy Hacking!</p>                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="http://blkperl.github.com/puppet-dev-with-lxc.html" rel="bookmark"
+                           title="Permalink to Creating a Puppet development environment with LXC">Creating a Puppet development environment with LXC</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2013-05-26T16:00:00">
+                Sun 26 May 2013
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/lxc.html">lxc</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/lxc.html">lxc</a><a href="http://blkperl.github.com/tag/puppet.html">puppet</a></p>
+</footer><!-- /.post-info -->                <p>Creating a Puppet development environement with LXC</p>
+                <a class="readmore" href="http://blkperl.github.com/puppet-dev-with-lxc.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="http://blkperl.github.com/split-brain-ganeti.html" rel="bookmark"
+                           title="Permalink to Fixing a split brain Ganeti instance">Fixing a split brain Ganeti instance</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2013-05-24T23:08:00">
+                Fri 24 May 2013
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/ganeti.html">ganeti</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/ganeti.html">ganeti</a><a href="http://blkperl.github.com/tag/kvm.html">kvm</a><a href="http://blkperl.github.com/tag/drbd.html">drbd</a></p>
+</footer><!-- /.post-info -->                <p>Fixing a split brain Ganeti instance</p>
+                <a class="readmore" href="http://blkperl.github.com/split-brain-ganeti.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="http://blkperl.github.com/centos_sunray.html" rel="bookmark"
+                           title="Permalink to Installing Sunray Software Server (SRSS) on Centos 5.x">Installing Sunray Software Server (SRSS) on Centos 5.x</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2013-05-18T21:35:00">
+                Sat 18 May 2013
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/centos.html">centos</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/centos.html">centos</a><a href="http://blkperl.github.com/tag/sunray.html">sunray</a><a href="http://blkperl.github.com/tag/oracle.html">oracle</a><a href="http://blkperl.github.com/tag/rhel.html">rhel</a><a href="http://blkperl.github.com/tag/redhat.html">redhat</a></p>
+</footer><!-- /.post-info -->                <p>Installing SunRay Software Server (SRSS) on Centos 5.x</p>
+                <a class="readmore" href="http://blkperl.github.com/centos_sunray.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="http://blkperl.github.com/remove_solaris_patch.html" rel="bookmark"
+                           title="Permalink to Removing a patch from Solaris 10">Removing a patch from Solaris 10</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2013-03-27T12:00:00">
+                Wed 27 March 2013
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a></p>
+</footer><!-- /.post-info -->                <p>How to remove a patch on Solaris 10</p>
+                <a class="readmore" href="http://blkperl.github.com/remove_solaris_patch.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="http://blkperl.github.com/replace-puppet-ca.html" rel="bookmark"
+                           title="Permalink to Replacing a Puppet CA Cert">Replacing a Puppet CA Cert</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
         <abbr class="published" title="2013-03-26T22:50:00">
                 Tue 26 March 2013
         </abbr>
 
-                <address class="vcard author">
-                By <a class="url fn" href="./author/william-van-hevelingen.html">William Van Hevelingen</a>
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-        <p>In <a href="./category/puppet.html">puppet</a>. </p>
-<p>tags: <a href="./tag/puppet.html">puppet</a><a href="./tag/openssl.html">openssl</a></p>
-</footer><!-- /.post-info --><p>This is more of a story than a tutorial and I make no claims that this is the "correct" way to replace a Puppet CA cert but this is how we did it.</p>
-<p>Our puppet ca cert was going to expire in about 18 hours so we set aside some time when no one else was working on other systems and madly searched the internet for tidbits of information to replace the cert.</p>
-<p>In our environment we have a Puppet CA Server, a puppetmaster, and puppetdb/dashboard server and about 200 nix clients.</p>
-<h2>Prep Work</h2>
-<ul>
-<li>Stop all puppet agents.</li>
-</ul>
-<p>If running the daemon the run <code>service puppet stop</code> on all the clients and if running by cron then disable all the puppet crons. This is not necessary but it will prevent the clients from spamming logs while your replace the certs. It may also prevent some clients from getting into a weird limbo state.</p>
-<ul>
-<li>Verify time is correct on all the puppetmasters.</li>
-</ul>
-<p>If the servers are not in sync then the certs generated will not work. I would recommend NTP if your not already running it to keep all your machines in sync.</p>
-<h2>Generate a new CA Cert</h2>
-<p>On the puppet ca remove the expired cert.</p>
-<div class="codehilite"><pre><span class="n">rm</span> <span class="o">-</span><span class="n">rf</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">puppet</span><span class="o">/</span><span class="n">ssl</span>
-</pre></div>
+<p>In <a href="http://blkperl.github.com/category/puppet.html">puppet</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/puppet.html">puppet</a><a href="http://blkperl.github.com/tag/openssl.html">openssl</a></p>
+</footer><!-- /.post-info -->                <p>Replacing a Puppet CA cert</p>
+                <a class="readmore" href="http://blkperl.github.com/replace-puppet-ca.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
-
-<p>Add any alternate dns names to /etc/puppet/puppet.conf</p>
-<div class="codehilite"><pre><span class="n">dns_alt_names</span><span class="o">=</span><span class="n">puppetca</span><span class="p">,</span><span class="n">puppetca</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span><span class="p">,</span><span class="n">zeratul</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span><span class="p">,</span><span class="n">zeratul</span>
-</pre></div>
-
-
-<p>Review the puppet.conf docs for other CA settings you may want to set before moving on.</p>
-<h2>Generate a new cert for the CA</h2>
-<div class="codehilite"><pre><span class="n">puppet</span> <span class="n">cert</span> <span class="o">--</span><span class="n">generate</span> <span class="n">zeratul</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span>
-</pre></div>
-
-
-<p>Verify the new ca.pem and ca cert look correct.</p>
-<div class="codehilite"><pre><span class="n">openssl</span> <span class="n">x509</span> <span class="o">-</span><span class="n">text</span> <span class="o">-</span><span class="n">noout</span> <span class="o">-</span><span class="n">in</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">puppet</span><span class="o">/</span><span class="n">ssl</span><span class="o">/</span><span class="n">certs</span><span class="o">/</span><span class="n">ca</span><span class="p">.</span><span class="n">pem</span>
-<span class="n">openssl</span> <span class="n">x509</span> <span class="o">-</span><span class="n">text</span> <span class="o">-</span><span class="n">noout</span> <span class="o">-</span><span class="n">in</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">puppet</span><span class="o">/</span><span class="n">ssl</span><span class="o">/</span><span class="n">certs</span><span class="o">/</span><span class="n">zeratul</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span><span class="p">.</span><span class="n">pem</span>
-</pre></div>
-
-
-<p>Specifically, the validity field should now be 5 years in the future. You can set the expiration date in puppet.conf before you generate the cert if you want a longer or shorter period.</p>
-<div class="codehilite"><pre><span class="err">$</span> <span class="n">openssl</span> <span class="n">x509</span> <span class="o">-</span><span class="n">text</span> <span class="o">-</span><span class="n">noout</span> <span class="o">-</span><span class="n">in</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">puppet</span><span class="o">/</span><span class="n">ssl</span><span class="o">/</span><span class="n">certs</span><span class="o">/</span><span class="n">ca</span><span class="p">.</span><span class="n">pem</span> <span class="o">|</span> <span class="n">grep</span> <span class="o">-</span><span class="n">i</span> <span class="n">validity</span> <span class="o">-</span><span class="n">A</span> <span class="mi">2</span>
-        <span class="n">Validity</span>
-            <span class="n">Not</span> <span class="n">Before</span><span class="o">:</span> <span class="n">Mar</span> <span class="mi">25</span> <span class="mo">03</span><span class="o">:</span><span class="mi">20</span><span class="o">:</span><span class="mi">40</span> <span class="mi">2013</span> <span class="n">GMT</span>
-            <span class="n">Not</span> <span class="n">After</span> <span class="o">:</span> <span class="n">Mar</span> <span class="mi">25</span> <span class="mo">03</span><span class="o">:</span><span class="mi">20</span><span class="o">:</span><span class="mi">40</span> <span class="mi">2018</span> <span class="n">GMT</span>
-</pre></div>
-
-
-<p>Restart apache.</p>
-<div class="codehilite"><pre><span class="n">service</span> <span class="n">apache2</span> <span class="n">restart</span>
-</pre></div>
-
-
-<h2>Generate a new cert for each puppet master</h2>
-<div class="codehilite"><pre><span class="cp"># request a new cert on the puppetmaster</span>
-<span class="n">puppet</span> <span class="n">agent</span> <span class="o">--</span><span class="n">test</span> <span class="o">--</span><span class="n">dns_alt_names</span><span class="o">=</span><span class="n">tassadar</span><span class="p">,</span><span class="n">tassadar</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span><span class="p">,</span><span class="n">puppet</span><span class="p">,</span><span class="n">puppet</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span>
-
-<span class="cp"># on the ca server sign the cert</span>
-<span class="n">puppet</span> <span class="n">cert</span> <span class="o">--</span><span class="n">allow</span><span class="o">-</span><span class="n">dns</span><span class="o">-</span><span class="n">alt</span><span class="o">-</span><span class="n">names</span> <span class="n">sign</span> <span class="n">tassadar</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span>
-
-<span class="cp"># restart apache on the puppet master</span>
-<span class="n">service</span> <span class="n">apache2</span> <span class="n">restart</span>
-</pre></div>
-
-
-<p>At this point your puppet master if configured to be an agent of itself, should be able to run <code>puppet agent --test</code> with no errors unless you are running puppetdb.</p>
-<h2>Generate a new cert for puppetdb</h2>
-<p>The <a href="http://docs.puppetlabs.com/puppetdb/1.1/maintain_and_tune.html#redo-ssl-setup-after-changing-certificates">official docs</a> did not work for us. We had to add some additional steps documented below and we filed a <a href="https://projects.puppetlabs.com/issues/19904">bug</a> to update the docs or fix the <code>puppetdb-ssl-setup</code> command.</p>
-<div class="codehilite"><pre><span class="cp"># Remove the old puppetdb certs on the puppetdb server</span>
-<span class="n">rm</span> <span class="o">-</span><span class="n">rf</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">puppetdb</span><span class="o">/</span><span class="n">ssl</span>
-
-<span class="cp"># Generate new puppetdb certs</span>
-<span class="n">puppetdb</span><span class="o">-</span><span class="n">ssl</span><span class="o">-</span><span class="n">setup</span>
-
-<span class="cp"># restart the service</span>
-<span class="n">service</span> <span class="n">puppetdb</span> <span class="n">restart</span>
-
-<span class="cp"># verify it restarts by watching the log (it may take a few minutes)</span>
-<span class="n">tail</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">log</span><span class="o">/</span><span class="n">puppetdb</span><span class="o">/</span><span class="n">puppetdb</span><span class="p">.</span><span class="n">log</span>
-</pre></div>
-
-
-<p>At this point if you did everything correct, the puppetmaster should be able to checkin to itself as a client with no errors and be able to download a catalog.</p>
-<h2>Request a cert for dashboard</h2>
-<p>Excerpt from the <a href="http://docs.puppetlabs.com/dashboard/manual/1.2/configuring.html">official docs</a> for the 1.2 stable release of dashboard.</p>
-<div class="codehilite"><pre><span class="cp"># on the dashboard server</span>
-<span class="n">cd</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">puppet</span><span class="o">-</span><span class="n">dashboard</span>
-<span class="n">rake</span> <span class="n">cert</span><span class="o">:</span><span class="n">request</span>
-
-<span class="cp"># on the ca server</span>
-<span class="n">puppet</span> <span class="n">cert</span> <span class="n">sign</span> <span class="n">dashboard</span>
-
-<span class="cp"># restart apache on the dashboard server</span>
-<span class="n">service</span> <span class="n">apache2</span> <span class="n">restart</span>
-</pre></div>
-
-
-<h2>Generate new certs for all your clients</h2>
-<p>Note if any clients are offline during the process they will need a new cert generated and signed when they come back online.</p>
-<p>We used a bash for loop that looked something like this.</p>
-<div class="codehilite"><pre><span class="n">cat</span> <span class="n">alltheclients</span><span class="p">.</span><span class="n">txt</span> <span class="o">|</span> <span class="n">xargs</span> <span class="o">-</span><span class="n">P</span> <span class="mi">10</span> <span class="o">-</span><span class="n">n</span> <span class="mi">1</span> <span class="o">-</span><span class="n">I</span> <span class="n">box</span> <span class="n">ssh</span> <span class="o">-</span><span class="mi">4</span> <span class="n">box</span> <span class="err">&#39;</span><span class="n">rm</span> <span class="o">-</span><span class="n">fr</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">puppet</span><span class="o">/</span><span class="n">ssl</span> <span class="o">&amp;&amp;</span> <span class="n">puppet</span> <span class="n">agent</span> <span class="o">-</span><span class="n">t</span><span class="err">&#39;</span>
-</pre></div>
-
-
-<p>The key part in this bash one liner is removing <code>/var/lib/puppet/ssl</code> and requesting a new cert.</p>
-<p>Then on the puppet ca server we signed the new certs</p>
-<div class="codehilite"><pre><span class="cp"># For each client sign the new cert</span>
-<span class="n">puppet</span> <span class="n">cert</span> <span class="n">sign</span> <span class="n">client2</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span>
-</pre></div>
-
-
-<p>Or you can use the <code>--all</code> flag</p>
-<p>There are some security risks with doing this. Basically for the same reasons on why not to use autosign. Read Brice's <a href="http://www.masterzen.fr/2010/11/14/puppet-ssl-explained/">blog</a> for more information about Puppet and SSl.</p>
-<div class="codehilite"><pre><span class="n">puppet</span> <span class="n">cert</span> <span class="n">sign</span> <span class="o">--</span><span class="n">all</span>
-</pre></div>
-
-
-<h2>Summary</h2>
-<p>This was a really painful process and is poorly documented. A lot of the clients were left in a broken state and needed to be kicked because the original for loop failed (probably because we didn't turn off the agents first). About 3 hours after we begun we had most of the clients working again and we fixed some stragglers the next day.</p>
-<p>If someone has a better/easier process for doing this, please blog about it or submit a pull request to the <a href="http://docs.puppetlabs.com/contribute.html#editing-the-documentation">official docs</a>.</p>                </article>
-                            </aside><!-- /#featured -->
-                            <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-                                                
-
-                 
-                        <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href="./evac-ganeti-node.html" rel="bookmark"
+                    <h1><a href="http://blkperl.github.com/evac-ganeti-node.html" rel="bookmark"
                            title="Permalink to Evacuating a Ganeti node for hardware diagnostics">Evacuating a Ganeti node for hardware diagnostics</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-03-23T12:00:00">
                 Sat 23 March 2013
         </abbr>
 
-                <address class="vcard author">
-                By <a class="url fn" href="./author/william-van-hevelingen.html">William Van Hevelingen</a>
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-        <p>In <a href="./category/ganeti.html">ganeti</a>. </p>
-<p>tags: <a href="./tag/ganeti.html">ganeti</a><a href="./tag/kvm.html">kvm</a></p>
-</footer><!-- /.post-info -->                How to evacuate a Ganeti node for hardware diagnostics
-                <a class="readmore" href="./evac-ganeti-node.html">read more</a>
-                                </div><!-- /.entry-content -->
+<p>In <a href="http://blkperl.github.com/category/ganeti.html">ganeti</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/ganeti.html">ganeti</a><a href="http://blkperl.github.com/tag/kvm.html">kvm</a></p>
+</footer><!-- /.post-info -->                <p>How to evacuate a Ganeti node for hardware diagnostics</p>
+                <a class="readmore" href="http://blkperl.github.com/evac-ganeti-node.html">read more</a>
+                </div><!-- /.entry-content -->
             </article></li>
-                            </ol><!-- /#posts-list -->
-                            <p class="paginator">
-        Page 1 / 1
-    </p>
-                        </section><!-- /#content -->
-                    <section id="extras" class="body">
-                                <div class="social">
+            </ol><!-- /#posts-list -->
+<p class="paginator">
+    Page 1 / 1
+</p>
+            </section><!-- /#content -->
+        <section id="extras" class="body">
+                <div class="social">
                         <h2>social</h2>
                         <ul>
-                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
-                            
-                                                    <li><a href="http://twitter.com/pdx_blkperl">twitter</a></li>
-                                                    <li><a href="http://github.com/blkperl">github</a></li>
-                                                </ul>
+                            <li><a href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="http://twitter.com/pdx_blkperl">twitter</a></li>
+                            <li><a href="http://github.com/blkperl">github</a></li>
+                        </ul>
                 </div><!-- /.social -->
-                </section><!-- /#extras -->
+        </section><!-- /#extras -->
 
         <footer id="contentinfo" class="body">
                 <address id="about" class="vcard body">

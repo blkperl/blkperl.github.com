@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>zfs snapshot blkperl/dev/brain@Today - puppet</title>
+        <title>Creating a Puppet development environment with LXC</title>
         <link rel="stylesheet" href="http://blkperl.github.com/theme/css/main.css" />
         <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="zfs snapshot blkperl/dev/brain@Today Atom Feed" />
 
@@ -17,15 +17,21 @@
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
-                    <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
+                    <li class="active"><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
                     <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="http://blkperl.github.com/puppet-dev-with-lxc.html" rel="bookmark"
+           title="Permalink to Creating a Puppet development environment with LXC">Creating a Puppet development environment with LXC</a></h1>
+<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+    </header>
 
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href="http://blkperl.github.com/puppet-dev-with-lxc.html">Creating a Puppet development environment with LXC</a></h1>
+    <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2013-05-26T16:00:00">
                 Sun 26 May 2013
@@ -36,7 +42,7 @@
         </address>
 <p>In <a href="http://blkperl.github.com/category/lxc.html">lxc</a>. </p>
 <p>tags: <a href="http://blkperl.github.com/tag/lxc.html">lxc</a><a href="http://blkperl.github.com/tag/puppet.html">puppet</a></p>
-</footer><!-- /.post-info --><p>This blog post is about my development setup on my laptop for testing out new software. You will learn how you can easily create LXC containers and connect them to a puppet master in about 20 minutes using the awesome cloning features of LXC.</p>
+</footer><!-- /.post-info -->      <p>This blog post is about my development setup on my laptop for testing out new software. You will learn how you can easily create LXC containers and connect them to a puppet master in about 20 minutes using the awesome cloning features of LXC.</p>
 <p>LXC is a lightweight container virtualization technology very similar to Solaris zones and FreeBSD jails and is availible on most Linux distributions. To learn more and read the docs check out the links at the bottom of the post. </p>
 <p>The first step is to install it.</p>
 <h2>Install LXC</h2>
@@ -173,39 +179,11 @@ service puppetmaster restart
 <li>
 <p><a href="https://help.ubuntu.com/12.04/serverguide/lxc.html">https://help.ubuntu.com/12.04/serverguide/lxc.html</a></p>
 </li>
-</ul>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+</ul>
+    </div><!-- /.entry-content -->
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="http://blkperl.github.com/replace-puppet-ca.html" rel="bookmark"
-                           title="Permalink to Replacing a Puppet CA Cert">Replacing a Puppet CA Cert</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2013-03-26T22:50:00">
-                Tue 26 March 2013
-        </abbr>
-
-        <address class="vcard author">
-                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
-        </address>
-<p>In <a href="http://blkperl.github.com/category/puppet.html">puppet</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/puppet.html">puppet</a><a href="http://blkperl.github.com/tag/openssl.html">openssl</a></p>
-</footer><!-- /.post-info -->                <p>Replacing a Puppet CA cert</p>
-                <a class="readmore" href="http://blkperl.github.com/replace-puppet-ca.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-            </ol><!-- /#posts-list -->
-<p class="paginator">
-    Page 1 / 1
-</p>
-            </section><!-- /#content -->
+  </article>
+</section>
         <section id="extras" class="body">
                 <div class="social">
                         <h2>social</h2>

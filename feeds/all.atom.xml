@@ -1,119 +1,672 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2013-03-26T22:50:00-07:00</updated><entry><title>Replacing a Puppet CA Cert</title><link href="/replace-puppet-ca.html" rel="alternate"></link><updated>2013-03-26T22:50:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:,2013-03-26:replace-puppet-ca.html</id><summary type="html">&lt;p&gt;This is more of a story than a tutorial and I make no claims that this is the "correct" way to replace a Puppet CA cert but this is how we did it.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="http://blkperl.github.com/" rel="alternate"></link><link href="http://blkperl.github.com/feeds/all.atom.xml" rel="self"></link><id>http://blkperl.github.com/</id><updated>2014-02-19T23:23:00-08:00</updated><entry><title>Using Vagrant with Solaris 11</title><link href="http://blkperl.github.com/vagrant_solaris11.html" rel="alternate"></link><updated>2014-02-19T23:23:00-08:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-02-19:vagrant_solaris11.html</id><summary type="html">&lt;p&gt;I finally got Solaris 11 vagrant boxes working! &lt;/p&gt;
+&lt;p&gt;First you need to download a Solaris 11 iso from Oracle's website. Then use packer to build a solaris11 box file which is explained in Alan Chalmer's &lt;a href="http://resilvered.blogspot.com/2014/02/solaris-vagrant-packer-and-base-box.html"&gt;blog&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Next we need a Vagrantfile, you can pull down mine and modify it for your needs. Then create an iso directory and place your solaris box image in it.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;git clone https://gist.github.com/9108604.git
+mkdir iso
+cp /packer/build/directory/packer_solaris-11.1-amd64_virtualbox.box iso/
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Our Vagrantfile looks like this. To mirror a production setup we are creating a secondary disk on the IDE controller to mirror rpool. Then we create a SATA controller and attach six 1G disks.&lt;/p&gt;
+&lt;div class="gist"&gt;
+    &lt;script src='https://gist.github.com/9108604.js'&gt;&lt;/script&gt;
+    &lt;noscript&gt;
+        &lt;pre&gt;&lt;code&gt;# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  diskroot = "/home/#{ENV['USER']}/VirtualBox\ VMs/"
+
+  config.vm.define "sunosfiler" do |v|
+    v.vm.box = "solaris-11.1"
+    v.vm.hostname = "sunosfiler"
+    v.vm.network :private_network, ip: "192.168.2.13"
+    v.vm.box_url = "iso/packer_solaris-11.1-amd64_virtualbox.box"
+    v.vm.provider :virtualbox do |vb|
+      # Create a sata controller for our disks
+      vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", 'sata']
+      # Create a second disk for the rpool mirror
+      diskname = "#{diskroot}/sunosfiler-ide1.vdi"
+      vb.customize ['createhd', '--filename', diskname, '--size', 8 * 1024]
+      vb.customize ['storageattach', :id, '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', diskname]
+    end
+    # Create six disks for a zpool
+    v.vm.provider :virtualbox do |vb|
+      ["1","2","3","4","5","6"].each do |disk|
+       diskname = "#{diskroot}/sunosfiler-sata#{disk}.vdi"
+       vb.customize ['createhd', '--filename', diskname, '--size', 1024]
+       vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk, '--device', 0, '--type', 'hdd', '--medium', diskname]
+      end
+    end
+  end
+end&lt;/code&gt;&lt;/pre&gt;
+    &lt;/noscript&gt;
+&lt;/div&gt;
+&lt;p&gt;Now that we have everything we need we can start the vm with vagrant up.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;vagrant up
+Bringing machine &lt;span class="s1"&gt;&amp;#39;sunosfiler&amp;#39;&lt;/span&gt; up with &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt; provider...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt; was not found. Fetching box from specified URL &lt;span class="k"&gt;for&lt;/span&gt;
+the provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;. Note that &lt;span class="k"&gt;if &lt;/span&gt;the URL does not have
+a box &lt;span class="k"&gt;for &lt;/span&gt;this provider, you should interrupt Vagrant now and add
+the box yourself. Otherwise Vagrant will attempt to download the
+full box prior to discovering this error.
+Downloading or copying the box...
+Extracting box...te: 25.0M/s, Estimated &lt;span class="nb"&gt;time &lt;/span&gt;remaining: 0:00:01&lt;span class="o"&gt;)&lt;/span&gt;
+Successfully added box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt; with provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;!
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Importing base box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt;...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Matching MAC address &lt;span class="k"&gt;for &lt;/span&gt;NAT networking...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting the name of the VM...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting the name of the VM...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Clearing any previously &lt;span class="nb"&gt;set &lt;/span&gt;forwarded ports...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Creating shared folders metadata...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Clearing any previously &lt;span class="nb"&gt;set &lt;/span&gt;network interfaces...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Preparing network interfaces based on configuration...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Forwarding ports...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; -- &lt;span class="nv"&gt;22&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; 2222 &lt;span class="o"&gt;(&lt;/span&gt;adapter 1&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Running any VM customizations...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Booting VM...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Waiting &lt;span class="k"&gt;for &lt;/span&gt;VM to boot. This can take a few minutes.
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; VM booted and ready &lt;span class="k"&gt;for &lt;/span&gt;use!
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting hostname...
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now we login and become the root user.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;vagrant ssh
+sudo -i
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Next let's take a look at the disks that we attached. You can use the format command to list the availible disks.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;format
+Searching &lt;span class="k"&gt;for &lt;/span&gt;disks...done
+
+
+AVAILABLE DISK SELECTIONS:
+       0. c7d0 &amp;lt;VBOX HAR-bafb5063-0735aa9-0001-8.00GB&amp;gt;
+          /pci@0,0/pci-ide@1,1/ide@0/cmdk@0,0
+       1. c8d0 &amp;lt;VBOX HAR-196ca772-16ab95f-0001 cyl 4093 alt 2 hd 128 sec 32&amp;gt;
+          /pci@0,0/pci-ide@1,1/ide@1/cmdk@0,0
+       2. c9t1d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@1,0
+       3. c9t2d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@2,0
+       4. c9t3d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@3,0
+       5. c9t4d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@4,0
+       6. c9t5d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@5,0
+       7. c9t6d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@6,0
+Specify disk &lt;span class="o"&gt;(&lt;/span&gt;enter its number&lt;span class="o"&gt;)&lt;/span&gt;:
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You can see that c7d0 and c8d0 are our 8G system disks attached to the IDE controller. Let's attach c8d0 to the rpool and make a mirror.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;zpool attach rpool c7d0 c8d0
+Make sure to &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resilver is &lt;span class="k"&gt;done &lt;/span&gt;before rebooting.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If we examine the pool now, we can see it resilvering.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;zpool&lt;/span&gt; &lt;span class="nx"&gt;status&lt;/span&gt; &lt;span class="nx"&gt;rpool&lt;/span&gt;
+  &lt;span class="nx"&gt;pool&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;rpool&lt;/span&gt;
+ &lt;span class="nx"&gt;state&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;DEGRADED&lt;/span&gt;
+&lt;span class="nx"&gt;status&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;One&lt;/span&gt; &lt;span class="nx"&gt;or&lt;/span&gt; &lt;span class="nx"&gt;more&lt;/span&gt; &lt;span class="nx"&gt;devices&lt;/span&gt; &lt;span class="nx"&gt;is&lt;/span&gt; &lt;span class="nx"&gt;currently&lt;/span&gt; &lt;span class="nx"&gt;being&lt;/span&gt; &lt;span class="nx"&gt;resilvered&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;  &lt;span class="nx"&gt;The&lt;/span&gt; &lt;span class="nx"&gt;pool&lt;/span&gt; &lt;span class="nx"&gt;will&lt;/span&gt;
+        &lt;span class="k"&gt;continue&lt;/span&gt; &lt;span class="nx"&gt;to&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nx"&gt;a&lt;/span&gt; &lt;span class="nx"&gt;degraded&lt;/span&gt; &lt;span class="nx"&gt;state&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+&lt;span class="nx"&gt;action&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;Wait&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nx"&gt;the&lt;/span&gt; &lt;span class="nx"&gt;resilver&lt;/span&gt; &lt;span class="nx"&gt;to&lt;/span&gt; &lt;span class="nx"&gt;complete&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+        &lt;span class="nx"&gt;Run&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;zpool status -v&amp;#39;&lt;/span&gt; &lt;span class="nx"&gt;to&lt;/span&gt; &lt;span class="nx"&gt;see&lt;/span&gt; &lt;span class="nx"&gt;device&lt;/span&gt; &lt;span class="nx"&gt;specific&lt;/span&gt; &lt;span class="nx"&gt;details&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+  &lt;span class="nx"&gt;scan&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;resilver&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nx"&gt;progress&lt;/span&gt; &lt;span class="nx"&gt;since&lt;/span&gt; &lt;span class="nx"&gt;Thu&lt;/span&gt; &lt;span class="nx"&gt;Feb&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;19&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;00&lt;/span&gt; &lt;span class="mi"&gt;2014&lt;/span&gt;
+    &lt;span class="mi"&gt;809&lt;/span&gt;&lt;span class="nx"&gt;M&lt;/span&gt; &lt;span class="nx"&gt;scanned&lt;/span&gt; &lt;span class="nx"&gt;out&lt;/span&gt; &lt;span class="nx"&gt;of&lt;/span&gt; &lt;span class="mf"&gt;3.69&lt;/span&gt;&lt;span class="nx"&gt;G&lt;/span&gt; &lt;span class="nx"&gt;at&lt;/span&gt; &lt;span class="mf"&gt;38.5&lt;/span&gt;&lt;span class="nx"&gt;M&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="nx"&gt;s&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="nx"&gt;h1m&lt;/span&gt; &lt;span class="nx"&gt;to&lt;/span&gt; &lt;span class="nx"&gt;go&lt;/span&gt;
+    &lt;span class="mi"&gt;777&lt;/span&gt;&lt;span class="nx"&gt;M&lt;/span&gt; &lt;span class="nx"&gt;resilvered&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;21.40&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="nx"&gt;done&lt;/span&gt;
+&lt;span class="nx"&gt;config&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+
+        &lt;span class="nx"&gt;NAME&lt;/span&gt;        &lt;span class="nx"&gt;STATE&lt;/span&gt;     &lt;span class="nx"&gt;READ&lt;/span&gt; &lt;span class="nx"&gt;WRITE&lt;/span&gt; &lt;span class="nx"&gt;CKSUM&lt;/span&gt;
+        &lt;span class="nx"&gt;rpool&lt;/span&gt;       &lt;span class="nx"&gt;DEGRADED&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;
+          &lt;span class="nx"&gt;mirror&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;  &lt;span class="nx"&gt;DEGRADED&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;
+            &lt;span class="nx"&gt;c7d0&lt;/span&gt;    &lt;span class="nx"&gt;ONLINE&lt;/span&gt;       &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;
+            &lt;span class="nx"&gt;c8d0&lt;/span&gt;    &lt;span class="nx"&gt;DEGRADED&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;resilvering&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="nx"&gt;errors&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;No&lt;/span&gt; &lt;span class="nx"&gt;known&lt;/span&gt; &lt;span class="nx"&gt;data&lt;/span&gt; &lt;span class="nx"&gt;errors&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;After a few minutes it should be fully online. Then we need to install grub on the new disk&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;bootadm install-bootloader -P rpool
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now that our root pool is setup we can move on to our storage pool. I choose to mirror every disk but you can choose whatever raid configuration you prefer.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;zpool create stark mirror c9t1d0 c9t2d0 mirror c9t3d0 c9t4d0 mirror c9t5d0 c9t6d0
+zpool status stark
+  pool: stark
+ state: ONLINE
+  scan: none requested
+config:
+
+        NAME        STATE     READ WRITE CKSUM
+        stark       ONLINE       0     0     0
+          mirror-0  ONLINE       0     0     0
+            c9t1d0  ONLINE       0     0     0
+            c9t2d0  ONLINE       0     0     0
+          mirror-1  ONLINE       0     0     0
+            c9t3d0  ONLINE       0     0     0
+            c9t4d0  ONLINE       0     0     0
+          mirror-2  ONLINE       0     0     0
+            c9t5d0  ONLINE       0     0     0
+            c9t6d0  ONLINE       0     0     0
+
+errors: No known data errors
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;At this point our storage is configured and we can move on to creating filesystems, setting up services, or running tests.&lt;/p&gt;
+&lt;p&gt;Happy Hacking!&lt;/p&gt;</summary><category term="solaris"></category><category term="vagrant"></category></entry><entry><title>Creating a Puppet development environment with LXC</title><link href="http://blkperl.github.com/puppet-dev-with-lxc.html" rel="alternate"></link><updated>2013-05-26T16:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-05-26:puppet-dev-with-lxc.html</id><summary type="html">&lt;p&gt;This blog post is about my development setup on my laptop for testing out new software. You will learn how you can easily create LXC containers and connect them to a puppet master in about 20 minutes using the awesome cloning features of LXC.&lt;/p&gt;
+&lt;p&gt;LXC is a lightweight container virtualization technology very similar to Solaris zones and FreeBSD jails and is availible on most Linux distributions. To learn more and read the docs check out the links at the bottom of the post. &lt;/p&gt;
+&lt;p&gt;The first step is to install it.&lt;/p&gt;
+&lt;h2&gt;Install LXC&lt;/h2&gt;
+&lt;p&gt;On Ubuntu installing LXC is easy and the package comes with working Ubuntu and Debian templates.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo apt-get install lxc
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Create a puppet master&lt;/h2&gt;
+&lt;p&gt;The first thing we need is a puppet master. To do this we are going to use the lxc-create command to create a minimal Ubuntu Precise instance.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Create a fresh precise minimal install&lt;/span&gt;
+lxc-create -n pdxpuppet-master -t ubuntu -- --release&lt;span class="o"&gt;=&lt;/span&gt;precise
+
+&lt;span class="c"&gt;# Start your puppet master&lt;/span&gt;
+lxc-start -n pdxpuppet-master -d
+
+&lt;span class="c"&gt;# Determine the ip address&lt;/span&gt;
+lxc-ls --fancy
+
+&lt;span class="c"&gt;# Log in with the default username: ubuntu and password: ubuntu&lt;/span&gt;
+ssh ubuntu@10.0.3.118
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You may need to wait a few seconds for the container to start before the ip address will be displayed in the output of lxc-ls --fancy&lt;/p&gt;
+&lt;h2&gt;Configure your puppet master&lt;/h2&gt;
+&lt;p&gt;Now we need to configure our new instance to be a puppet master.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Become the root user&lt;/span&gt;
+sudo -i
+
+&lt;span class="c"&gt;# Install wget&lt;/span&gt;
+apt-get install wget
+
+&lt;span class="c"&gt;# Install the puppetlabs apt repository&lt;/span&gt;
+wget http://apt.puppetlabs.com/puppetlabs-release-precise.deb
+dpkg -i puppetlabs-release-precise.deb
+apt-get update
+
+&lt;span class="c"&gt;# Install the webrick puppetmaster&lt;/span&gt;
+apt-get install puppet puppetmaster
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The webrick puppetmaster is not recommended for production use. At this point you can choose to configure Apache and &lt;a href="http://docs.puppetlabs.com/guides/passenger.html"&gt;Passenger&lt;/a&gt; or an alternative.&lt;/p&gt;
+&lt;h2&gt;Create a puppet client&lt;/h2&gt;
+&lt;p&gt;Next we need a puppet client. The process will be almost identical to creating our puppet master.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Create a fresh precise minimal install&lt;/span&gt;
+lxc-create -n pdxpuppet-client0 -t ubuntu -- --release&lt;span class="o"&gt;=&lt;/span&gt;precise
+
+&lt;span class="c"&gt;# Start your puppet client0&lt;/span&gt;
+lxc-start -n pdxpuppet-client0 -d
+
+&lt;span class="c"&gt;# Determine the ip address&lt;/span&gt;
+lxc-ls --fancy
+
+&lt;span class="c"&gt;# Log in with the default username: ubuntu and password: ubuntu&lt;/span&gt;
+ssh ubuntu@10.0.3.119
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Configure the client&lt;/h2&gt;
+&lt;p&gt;Next we need to configure our client to know about the puppet master.&lt;/p&gt;
+&lt;p&gt;Replace 10.0.3.118 with the ip of your puppetmaster&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Become the root user&lt;/span&gt;
+sudo -i
+
+&lt;span class="c"&gt;# In this environment we don&amp;#39;t have DNS so add the puppet master to /etc/hosts&lt;/span&gt;
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;10.0.3.118 puppet puppet.lan&amp;quot;&lt;/span&gt; &amp;gt;&amp;gt; /etc/hosts
+
+&lt;span class="c"&gt;# Install puppet&lt;/span&gt;
+apt-get install puppet
+
+&lt;span class="c"&gt;# Make puppet start on boot&lt;/span&gt;
+/bin/sed -i &lt;span class="s1"&gt;&amp;#39;s/START\=no/START\=yes/&amp;#39;&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;/etc/default/puppet&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;At this stage you can add any other useful tools or configuration. I usually install vim, git and ssh keys for root login from my laptop.&lt;/p&gt;
+&lt;p&gt;After you're finished configuring the client turn it off.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;lxc-stop -n pdxpuppet-client0
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Configure Puppet Autosigning on your master&lt;/h2&gt;
+&lt;p&gt;This next step is for convenience. If you want to avoid signing certs in your development environment you can turn on auto signing.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# On your puppetmaster&lt;/span&gt;
+
+&lt;span class="c"&gt;# Allow hosts with domain name lan&lt;/span&gt;
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;*.lan&amp;quot;&lt;/span&gt; &amp;gt;&amp;gt; /etc/puppet/autosign.conf
+
+&lt;span class="c"&gt;# Restart the puppet master&lt;/span&gt;
+service puppetmaster restart
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Auto signing is described in the docs &lt;a href="http://docs.puppetlabs.com/guides/configuring.html#autosignconf"&gt;here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;There are security concerns with auto signing as described in the docs.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="s"&gt;&amp;quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In this case my LXC environment is only on my laptop so I'm choosing to enable autosigining.&lt;/p&gt;
+&lt;h2&gt;Add a node definition to your site.pp&lt;/h2&gt;
+&lt;p&gt;Now we need to make a node definition for our client. By using a regex we can allow client 0 through client 9 to connect.&lt;/p&gt;
+&lt;p&gt;On your puppet master add the following to /etc/puppet/manifests/site.pp&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;node&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="na"&gt;pdxpuppet&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="na"&gt;client&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="c"&gt;&lt;/span&gt;
+
+&lt;span class="c"&gt;  # add code here&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Clone more clients using client0&lt;/h2&gt;
+&lt;p&gt;Now we X more clients. For now we will create 5 more.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# LXC will make an exact copy and tweak the network configs&lt;/span&gt;
+&lt;span class="k"&gt;for &lt;/span&gt;i in 1 2 3 4 5; &lt;span class="k"&gt;do &lt;/span&gt;lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; ; &lt;span class="k"&gt;done&lt;/span&gt;
+
+&lt;span class="c"&gt;# Start your new machines&lt;/span&gt;
+&lt;span class="k"&gt;for &lt;/span&gt;i in 1 2 3 4 5; &lt;span class="k"&gt;do &lt;/span&gt;lxc-start -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; ; &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;After you're clients boot they should automatically check in with the puppetmaster and request certs.&lt;/p&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;At this point you have successfully configured a puppet master and five puppet clients that are ready for testing out new code. If you need more clients you can clone pdxpuppet-client0 and generate as many as you need and they will automatically connect to the puppet master on boot.&lt;/p&gt;
+&lt;h2&gt;Resources&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="http://en.wikipedia.org/wiki/LXC"&gt;http://en.wikipedia.org/wiki/LXC&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="http://lxc.sourceforge.net/"&gt;http://lxc.sourceforge.net/&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="https://help.ubuntu.com/12.04/serverguide/lxc.html"&gt;https://help.ubuntu.com/12.04/serverguide/lxc.html&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;</summary><category term="lxc"></category><category term="puppet"></category></entry><entry><title>Fixing a split brain Ganeti instance</title><link href="http://blkperl.github.com/split-brain-ganeti.html" rel="alternate"></link><updated>2013-05-24T23:08:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-05-24:split-brain-ganeti.html</id><summary type="html">&lt;h2&gt;Recovering from split brain&lt;/h2&gt;
+&lt;p&gt;We run a 4 node Ganeti cluster and during a failover of a node some instances got degraded disks. We're not sure how it happened but some quick googling told us it was a split brain and is recoverable. The following is how we confirmed it was split brain and how we repaired the affected instances.&lt;/p&gt;
+&lt;h2&gt;You can identify a split brain by the following.&lt;/h2&gt;
+&lt;p&gt;Degraded disks in gnt-instance info&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;on primary:   /dev/drbd1 &lt;span class="o"&gt;(&lt;/span&gt;147:1&lt;span class="o"&gt;)&lt;/span&gt; in sync, status *DEGRADED*
+on secondary: /dev/drbd9 &lt;span class="o"&gt;(&lt;/span&gt;147:9&lt;span class="o"&gt;)&lt;/span&gt; in sync, status *DEGRADED*
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;StandAlone state on the primary (/proc/drbd)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt; 1: cs:StandAlone ro:Primary/Unknown ds:UpToDate/DUnknown   r-----
+    ns:969536 nr:0 dw:22564060 dr:43036016 al:242 bm:2652 lo:0 pe:0 ua:0 ap:0 ep:1 wo:f oos:254024
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;StandAlone state on the secondary (/proc/drbd)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;9: cs:StandAlone ro:Primary/Unknown ds:UpToDate/DUnknown   r-----
+    ns:0 nr:969536 dw:24185104 dr:996 al:0 bm:1293 lo:0 pe:0 ua:0 ap:0 ep:1 wo:f oos:0
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h1&gt;Steps to repair&lt;/h1&gt;
+&lt;h2&gt;Recreate the secondary&lt;/h2&gt;
+&lt;p&gt;(assuming you think the primary is healthy)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# replace $another_node with any node that is not the primary or secondary&lt;/span&gt;
+gnt-instance replace-disks -n &lt;span class="nv"&gt;$another_node&lt;/span&gt; &lt;span class="nv"&gt;$instance&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Wait for disks to re-sync&lt;/h2&gt;
+&lt;p&gt;You can watch the progress by looking at /proc/drbd&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;1: cs:SyncSource ro:Primary/Secondary ds:UpToDate/Inconsistent C r-----
+    ns:16437312 nr:0 dw:22602340 dr:59475304 al:256 bm:3653 lo:1 pe:123 ua:64 ap:0 ep:1 wo:f oos:4555336
+        &lt;span class="o"&gt;[==============&lt;/span&gt;&amp;gt;.....&lt;span class="o"&gt;]&lt;/span&gt; synced: 78.3% &lt;span class="o"&gt;(&lt;/span&gt;4448/20480&lt;span class="o"&gt;)&lt;/span&gt;Mfinish: 0:01:14 speed: 61,144 &lt;span class="o"&gt;(&lt;/span&gt;58,212&lt;span class="o"&gt;)&lt;/span&gt; K/sec
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Verify the disks now&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;gnt-instance info &lt;span class="nv"&gt;$instance&lt;/span&gt; | grep drbd
+  Disk template: drbd
+    - disk/0: drbd8, size 20.0G
+      on primary:   /dev/drbd1 &lt;span class="o"&gt;(&lt;/span&gt;147:1&lt;span class="o"&gt;)&lt;/span&gt; in sync, status ok
+      on secondary: /dev/drbd1 &lt;span class="o"&gt;(&lt;/span&gt;147:1&lt;span class="o"&gt;)&lt;/span&gt; in sync, status ok
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="ganeti"></category><category term="kvm"></category><category term="drbd"></category></entry><entry><title>Installing Sunray Software Server (SRSS) on Centos 5.x</title><link href="http://blkperl.github.com/centos_sunray.html" rel="alternate"></link><updated>2013-05-18T21:35:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-05-18:centos_sunray.html</id><summary type="html">&lt;p&gt;These are the steps I took to get the SunRay software working on Centos. I was able to get this working thanks to scraps of information from &lt;a href="http://blog.parahard.com/2009/06/installing-sunray-ii- erver-software-on.html"&gt;Peter Senna Tschudin's blog&lt;/a&gt; In addition to get it working on 32bit like in Peter's blog, I also got it working on 64 bit. These are the instructions for 64bit.&lt;/p&gt;
+&lt;p&gt;The SunRays we have are the SunRay 2 model updated with the latest firmware.&lt;/p&gt;
+&lt;h2&gt;Download the software from Oracle's support portal (requires login)&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/
+&lt;span class="c"&gt;# download files from Oracle&amp;#39;s website&lt;/span&gt;
+unzip V37034-01.zip
+unzip p16406547_111_Generic.zip
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Install the dependencies&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install glib dhcp openldap-clients tftp-server libXp libXfont.i386 openmotif22 openssl compat-libstdc++-33 libusb-devel compat-openldap kernel-devel gdbm.i386 gcc openmotif.i386 sssd-client.i386
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If you are not using sssd you will need to install the nscd.i386 package.&lt;/p&gt;
+&lt;h2&gt;Install the firmware&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/sros_11.1.1.0/
+./utfwinstall 
+Installing Sun Ray Operating Software 11.1.1.0
+
+Sun Ray Operating Software 11.1.1.0 has been successfully installed.
+
+This output has been logged to
+
+    /var/log/utfwinstall.2013_05_09_14:48:54.log
+
++++ Done.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Install the bundled JRE and Apache Tomcat&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/srs_5.4.0.0-Linux.i386/Supplemental/Java_Runtime_Environment/Linux
+sh jre-6u41-linux-i586.bin 
+mv jre1.6.0_41/ /opt/
+&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/srs_5.4.0.0-Linux.i386/Supplemental/Apache_Tomcat
+gunzip apache-tomcat-5.5.36.tar.gz
+tar xvf apache-tomcat-5.5.36.tar 
+mv apache-tomcat-5.5.36 /opt/
+ln -s /opt/apache-tomcat-5.5.36/ /opt/apache-tomcat
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Install the Sunray Server Software&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/srs_5.4.0.0-Linux.i386
+./utsetup
+
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+Accept? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; y
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+Enter Java v1.6 &lt;span class="o"&gt;(&lt;/span&gt;or later&lt;span class="o"&gt;)&lt;/span&gt; location: &lt;span class="o"&gt;[&lt;/span&gt;/usr/java&lt;span class="o"&gt;]&lt;/span&gt; /opt/jre1.6.0_41/
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+Continue? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt; y
+
+Enter new UT admin password:  
+Again: Enter new UT admin password:  
+Configure Sun Ray Web Administration? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt; y
+
+Enter Apache Tomcat installation directory &lt;span class="o"&gt;[&lt;/span&gt;/opt/apache-tomcat&lt;span class="o"&gt;]&lt;/span&gt;
+
+Enter HTTP port number &lt;span class="o"&gt;[&lt;/span&gt;1660&lt;span class="o"&gt;]&lt;/span&gt; 8080
+
+Enable secure connections? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt; y
+
+Enter HTTPS port number &lt;span class="o"&gt;[&lt;/span&gt;1661&lt;span class="o"&gt;]&lt;/span&gt; 8081
+
+Enter Tomcat process username &lt;span class="o"&gt;[&lt;/span&gt;utwww&lt;span class="o"&gt;]&lt;/span&gt;
+
+Enable remote server administration? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt; Y
+
+Configure Sun Ray Kiosk Mode? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt; N
+
+Configure this server &lt;span class="k"&gt;for &lt;/span&gt;a failover group? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt;
+
+About to configure the following software products:
+
+Sun Ray Data Store 3.5
+    Hostname: mysunrayserver.example.org
+    Sun Ray root entry: &lt;span class="nv"&gt;o&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;utdata
+    Sun Ray root name: utdata
+    Sun Ray utdata admin password: &lt;span class="o"&gt;(&lt;/span&gt;not shown&lt;span class="o"&gt;)&lt;/span&gt;
+    SRDS &lt;span class="s1"&gt;&amp;#39;rootdn&amp;#39;&lt;/span&gt;: &lt;span class="nv"&gt;cn&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;admin,o&lt;span class="o"&gt;=&lt;/span&gt;utdata
+
+Sun Ray Web Administration hosted at Apache Tomcat/5.5.36
+    Apache Tomcat installation directory: /opt/apache-tomcat
+    HTTP port number: 8080
+    HTTPS port number: 8081
+    Tomcat process username: utwww
+    Remote server administration: Enabled
+
+Sun Ray Server Software 4.5
+    Failover group: no
+    Sun Ray Kiosk Mode: no
+Continue? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
+
+Enter groupname &lt;span class="k"&gt;for &lt;/span&gt;Windows Connector &lt;span class="o"&gt;[&lt;/span&gt;utwc&lt;span class="o"&gt;]&lt;/span&gt;
+
+Enter group ID &lt;span class="o"&gt;(&lt;/span&gt;gid&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="k"&gt;for &lt;/span&gt;the group &lt;span class="o"&gt;[&lt;/span&gt;auto&lt;span class="o"&gt;]&lt;/span&gt;
+
+Do you want to configure Firmware downloads &lt;span class="k"&gt;for &lt;/span&gt;Sun Ray clients? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Reboot&lt;/h2&gt;
+&lt;p&gt;Seriously you should reboot&lt;/p&gt;
+&lt;h2&gt;If the services are not running on reboot&lt;/h2&gt;
+&lt;p&gt;You can manually start them with:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;/opt/SUNWut/sbin/utadm -L on
+/opt/SUNWut/sbin/utstart
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;SunRay Web Administration&lt;/h2&gt;
+&lt;p&gt;Log into &lt;a href="https://mysunrayserver.example.org:8081"&gt;https://mysunrayserver.example.org:8081&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;With the user: admin and the password you specified in the installer.&lt;/p&gt;
+&lt;p&gt;Note: Replace port 8081 with the port you selected in the installer if you did not select 8081.&lt;/p&gt;
+&lt;p&gt;If you can't log in because the "data store is not responding" proceed to the debugging section.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Click "Advanced"&lt;/li&gt;
+&lt;li&gt;Check all the encryption buttons&lt;/li&gt;
+&lt;li&gt;Switch soft to hard for client and server&lt;/li&gt;
+&lt;li&gt;Following instruction to restart client&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Debugging&lt;/h2&gt;
+&lt;p&gt;The following two log files were especially helpful in debugging problems.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;tail -f /var/opt/SUNWut/log/messages
+tail -f /var/log/autholog
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Security&lt;/h2&gt;
+&lt;p&gt;We have the SunRays in there own vlan and only the SunRay servers are allowed to communicate with them. You should also firewall the Web Admin ports in my case port 8080 and 8081.&lt;/p&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;I havn't had a lot of luck with a consistent installation using the instructions above. If it doesn't work the first time try uninstalling and resintalling the SunRay software. Also I was doing this with SELinux disabled and we already had working SunRays with Solaris 10 so I can't really comment on the dhcp configs or any special network acls we may have in place.&lt;/p&gt;</summary><category term="centos"></category><category term="sunray"></category><category term="oracle"></category><category term="rhel"></category><category term="redhat"></category></entry><entry><title>Removing a patch from Solaris 10</title><link href="http://blkperl.github.com/remove_solaris_patch.html" rel="alternate"></link><updated>2013-03-27T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-03-27:remove_solaris_patch.html</id><summary type="html">&lt;p&gt;In this example we removed a custom IDR patch provided by Oracle.&lt;/p&gt;
+&lt;h2&gt;Check to see if the patch is installed&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;caerbannog# showrev -p | grep 148363
+Patch: IDR148363-26 Obsoletes:  Requires: 147441-26 Incompatibles: 147441-27 Packages: SUNWnfsckr, SUNWzfskr, SUNWzfsu, SUNWzfsr
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Remove the patch with patchrm&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;caerbannog# patchrm IDR148363-26
+Validating patches...
+
+Loading patches installed on the system...
+
+Done!
+
+Checking patches that you specified &lt;span class="k"&gt;for &lt;/span&gt;removal.
+
+Done!
+
+Approved patches will be removed in this order:
+
+IDR148363-26
+Preparing checklist &lt;span class="k"&gt;for &lt;/span&gt;non-global zone check...
+
+Checking non-global zones...
+
+
+This patch passes non-global zone check.
+IDR148363-26
+
+
+Summary &lt;span class="k"&gt;for &lt;/span&gt;zones:
+
+Zone crisco
+
+Rejected patches:
+None.
+tches that passed the dependency check:
+None.
+
+
+Removing patches from non-global zones
+
+Removing patches from zone crisco
+Removing patch IDR148363-26...
+Done!
+
+Checking installed patches...
+
+Backing out patch IDR148363-26...
+
+Patch IDR148363-26 has been backed out.
+
+
+Removing patches from zone nt4
+
+Removing patches from zone sfw
+
+Removing patches from global zone
+Removing patch IDR148363-26...
+
+Checking installed patches...
+
+Executing prebackout script...
+Backing out patch IDR148363-26...
+
+Executing postbackout script...
+Patch IDR148363-26 has been backed out.
+
+Done!
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="solaris"></category></entry><entry><title>Replacing a Puppet CA Cert</title><link href="http://blkperl.github.com/replace-puppet-ca.html" rel="alternate"></link><updated>2013-03-26T22:50:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-03-26:replace-puppet-ca.html</id><summary type="html">&lt;p&gt;This is more of a story than a tutorial and I make no claims that this is the "correct" way to replace a Puppet CA cert but this is how we did it.&lt;/p&gt;
 &lt;p&gt;Our puppet ca cert was going to expire in about 18 hours so we set aside some time when no one else was working on other systems and madly searched the internet for tidbits of information to replace the cert.&lt;/p&gt;
 &lt;p&gt;In our environment we have a Puppet CA Server, a puppetmaster, and puppetdb/dashboard server and about 200 nix clients.&lt;/p&gt;
 &lt;h2&gt;Prep Work&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;Stop all puppet agents.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;If running the daemon the run &lt;code&gt;service puppet stop&lt;/code&gt; on all the clients and if running by cron then disable all the puppet crons. This is not necessary but it will prevent the clients from spamming logs while your replace the certs. It may also prevent some clients from getting into a weird limbo state.&lt;/p&gt;
+&lt;p&gt;If running the daemon, run &lt;code&gt;service puppet stop&lt;/code&gt; on all the clients&lt;/p&gt;
+&lt;p&gt;If running by cron then disable all the puppet crons.&lt;/p&gt;
+&lt;p&gt;This is not necessary but it will prevent the clients from spamming logs while you replace the certs. It may also prevent some clients from getting into a weird limbo state.&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Verify time is correct on all the puppetmasters.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;If the servers are not in sync then the certs generated will not work. I would recommend NTP if your not already running it to keep all your machines in sync.&lt;/p&gt;
+&lt;p&gt;If the servers are not in sync then the certs generated will not work. I would recommend using NTP if you're not already running it.&lt;/p&gt;
 &lt;h2&gt;Generate a new CA Cert&lt;/h2&gt;
 &lt;p&gt;On the puppet ca remove the expired cert.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;rm&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;rf&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;rm -rf /var/lib/puppet/ssl
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Add any alternate dns names to /etc/puppet/puppet.conf&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;dns_alt_names&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;dns_alt_names&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Review the puppet.conf docs for other CA settings you may want to set before moving on.&lt;/p&gt;
 &lt;h2&gt;Generate a new cert for the CA&lt;/h2&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;generate&lt;/span&gt; &lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;puppet cert --generate zeratul.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Verify the new ca.pem and ca cert look correct.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;openssl&lt;/span&gt; &lt;span class="n"&gt;x509&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;noout&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;in&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;certs&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pem&lt;/span&gt;
-&lt;span class="n"&gt;openssl&lt;/span&gt; &lt;span class="n"&gt;x509&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;noout&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;in&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;certs&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pem&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem
+openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/zeratul.cat.pdx.edu.pem
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Specifically, the validity field should now be 5 years in the future. You can set the expiration date in puppet.conf before you generate the cert if you want a longer or shorter period.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="n"&gt;openssl&lt;/span&gt; &lt;span class="n"&gt;x509&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;noout&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;in&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;certs&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pem&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;grep&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="n"&gt;validity&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;A&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;
-        &lt;span class="n"&gt;Validity&lt;/span&gt;
-            &lt;span class="n"&gt;Not&lt;/span&gt; &lt;span class="n"&gt;Before&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;25&lt;/span&gt; &lt;span class="mo"&gt;03&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;GMT&lt;/span&gt;
-            &lt;span class="n"&gt;Not&lt;/span&gt; &lt;span class="n"&gt;After&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;25&lt;/span&gt; &lt;span class="mo"&gt;03&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2018&lt;/span&gt; &lt;span class="n"&gt;GMT&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem | grep -i validity -A 2
+        Validity
+            Not Before: Mar 25 03:20:40 2013 GMT
+            Not After : Mar 25 03:20:40 2018 GMT
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Restart apache.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;service&lt;/span&gt; &lt;span class="n"&gt;apache2&lt;/span&gt; &lt;span class="n"&gt;restart&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;service apache2 restart
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;h2&gt;Generate a new cert for each puppet master&lt;/h2&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# request a new cert on the puppetmaster&lt;/span&gt;
-&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;agent&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;test&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;dns_alt_names&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tassadar&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;tassadar&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# request a new cert on the puppetmaster&lt;/span&gt;
+puppet agent --test --dns_alt_names&lt;span class="o"&gt;=&lt;/span&gt;tassadar,tassadar.cat.pdx.edu,puppet,puppet.cat.pdx.edu
 
-&lt;span class="cp"&gt;# on the ca server sign the cert&lt;/span&gt;
-&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;allow&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;dns&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;alt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;names&lt;/span&gt; &lt;span class="n"&gt;sign&lt;/span&gt; &lt;span class="n"&gt;tassadar&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;span class="c"&gt;# on the ca server sign the cert&lt;/span&gt;
+puppet cert --allow-dns-alt-names sign tassadar.cat.pdx.edu
 
-&lt;span class="cp"&gt;# restart apache on the puppet master&lt;/span&gt;
-&lt;span class="n"&gt;service&lt;/span&gt; &lt;span class="n"&gt;apache2&lt;/span&gt; &lt;span class="n"&gt;restart&lt;/span&gt;
+&lt;span class="c"&gt;# restart apache on the puppet master&lt;/span&gt;
+service apache2 restart
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;At this point your puppet master if configured to be an agent of itself, should be able to run &lt;code&gt;puppet agent --test&lt;/code&gt; with no errors unless you are running puppetdb.&lt;/p&gt;
 &lt;h2&gt;Generate a new cert for puppetdb&lt;/h2&gt;
 &lt;p&gt;The &lt;a href="http://docs.puppetlabs.com/puppetdb/1.1/maintain_and_tune.html#redo-ssl-setup-after-changing-certificates"&gt;official docs&lt;/a&gt; did not work for us. We had to add some additional steps documented below and we filed a &lt;a href="https://projects.puppetlabs.com/issues/19904"&gt;bug&lt;/a&gt; to update the docs or fix the &lt;code&gt;puppetdb-ssl-setup&lt;/code&gt; command.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# Remove the old puppetdb certs on the puppetdb server&lt;/span&gt;
-&lt;span class="n"&gt;rm&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;rf&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;etc&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppetdb&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Remove the old puppetdb certs on the puppetdb server&lt;/span&gt;
+rm -rf /etc/puppetdb/ssl
 
-&lt;span class="cp"&gt;# Generate new puppetdb certs&lt;/span&gt;
-&lt;span class="n"&gt;puppetdb&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;setup&lt;/span&gt;
+&lt;span class="c"&gt;# Generate new puppetdb certs&lt;/span&gt;
+puppetdb-ssl-setup
 
-&lt;span class="cp"&gt;# restart the service&lt;/span&gt;
-&lt;span class="n"&gt;service&lt;/span&gt; &lt;span class="n"&gt;puppetdb&lt;/span&gt; &lt;span class="n"&gt;restart&lt;/span&gt;
+&lt;span class="c"&gt;# restart the service&lt;/span&gt;
+service puppetdb restart
 
-&lt;span class="cp"&gt;# verify it restarts by watching the log (it may take a few minutes)&lt;/span&gt;
-&lt;span class="n"&gt;tail&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppetdb&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppetdb&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;log&lt;/span&gt;
+&lt;span class="c"&gt;# verify it restarts by watching the log (it may take a few minutes)&lt;/span&gt;
+tail -f /var/log/puppetdb/puppetdb.log
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;At this point if you did everything correct, the puppetmaster should be able to checkin to itself as a client with no errors and be able to download a catalog.&lt;/p&gt;
 &lt;h2&gt;Request a cert for dashboard&lt;/h2&gt;
 &lt;p&gt;Excerpt from the &lt;a href="http://docs.puppetlabs.com/dashboard/manual/1.2/configuring.html"&gt;official docs&lt;/a&gt; for the 1.2 stable release of dashboard.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# on the dashboard server&lt;/span&gt;
-&lt;span class="n"&gt;cd&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;usr&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;share&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;dashboard&lt;/span&gt;
-&lt;span class="n"&gt;rake&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# on the dashboard server&lt;/span&gt;
+&lt;span class="nb"&gt;cd&lt;/span&gt; /usr/share/puppet-dashboard
+rake cert:request
 
-&lt;span class="cp"&gt;# on the ca server&lt;/span&gt;
-&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="n"&gt;sign&lt;/span&gt; &lt;span class="n"&gt;dashboard&lt;/span&gt;
+&lt;span class="c"&gt;# on the ca server&lt;/span&gt;
+puppet cert sign dashboard
 
-&lt;span class="cp"&gt;# restart apache on the dashboard server&lt;/span&gt;
-&lt;span class="n"&gt;service&lt;/span&gt; &lt;span class="n"&gt;apache2&lt;/span&gt; &lt;span class="n"&gt;restart&lt;/span&gt;
+&lt;span class="c"&gt;# restart apache on the dashboard server&lt;/span&gt;
+service apache2 restart
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;h2&gt;Generate new certs for all your clients&lt;/h2&gt;
 &lt;p&gt;Note if any clients are offline during the process they will need a new cert generated and signed when they come back online.&lt;/p&gt;
 &lt;p&gt;We used a bash for loop that looked something like this.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;cat&lt;/span&gt; &lt;span class="n"&gt;alltheclients&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;txt&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;xargs&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;P&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;I&lt;/span&gt; &lt;span class="n"&gt;box&lt;/span&gt; &lt;span class="n"&gt;ssh&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt; &lt;span class="n"&gt;box&lt;/span&gt; &lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;rm&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;fr&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;puppet&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;ssl&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;agent&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cat alltheclients.txt | xargs -P 10 -n 1 -I box ssh -4 box &lt;span class="s1"&gt;&amp;#39;rm -fr /var/lib/puppet/ssl &amp;amp;&amp;amp; puppet agent -t&amp;#39;&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;The key part in this bash one liner is removing &lt;code&gt;/var/lib/puppet/ssl&lt;/code&gt; and requesting a new cert.&lt;/p&gt;
 &lt;p&gt;Then on the puppet ca server we signed the new certs&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# For each client sign the new cert&lt;/span&gt;
-&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="n"&gt;sign&lt;/span&gt; &lt;span class="n"&gt;client2&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# For each client sign the new cert&lt;/span&gt;
+puppet cert sign client2.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Or you can use the &lt;code&gt;--all&lt;/code&gt; flag&lt;/p&gt;
 &lt;p&gt;There are some security risks with doing this. Basically for the same reasons on why not to use autosign. Read Brice's &lt;a href="http://www.masterzen.fr/2010/11/14/puppet-ssl-explained/"&gt;blog&lt;/a&gt; for more information about Puppet and SSl.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;cert&lt;/span&gt; &lt;span class="n"&gt;sign&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;all&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;puppet cert sign --all
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;h2&gt;Summary&lt;/h2&gt;
 &lt;p&gt;This was a really painful process and is poorly documented. A lot of the clients were left in a broken state and needed to be kicked because the original for loop failed (probably because we didn't turn off the agents first). About 3 hours after we begun we had most of the clients working again and we fixed some stragglers the next day.&lt;/p&gt;
-&lt;p&gt;If someone has a better/easier process for doing this, please blog about it or submit a pull request to the &lt;a href="http://docs.puppetlabs.com/contribute.html#editing-the-documentation"&gt;official docs&lt;/a&gt;.&lt;/p&gt;</summary><category term="puppet"></category><category term="openssl"></category></entry><entry><title>Evacuating a Ganeti node for hardware diagnostics</title><link href="/evac-ganeti-node.html" rel="alternate"></link><updated>2013-03-23T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:,2013-03-23:evac-ganeti-node.html</id><summary type="html">&lt;p&gt;One of the nodes in our Ganeti cluster was hanging on lvs commands and some of the instances were hanging while they wait for IO. I decided to be proactive and live migrate all of the instances off the node in order to bring it down for some debugging.&lt;/p&gt;
+&lt;p&gt;If someone has a better/easier process for doing this, please blog about it or submit a pull request to the &lt;a href="http://docs.puppetlabs.com/contribute.html#editing-the-documentation"&gt;official docs&lt;/a&gt;.&lt;/p&gt;</summary><category term="puppet"></category><category term="openssl"></category></entry><entry><title>Evacuating a Ganeti node for hardware diagnostics</title><link href="http://blkperl.github.com/evac-ganeti-node.html" rel="alternate"></link><updated>2013-03-23T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-03-23:evac-ganeti-node.html</id><summary type="html">&lt;p&gt;One of the nodes in our Ganeti cluster was hanging on lvs commands and some of the instances were hanging while they wait for IO. I decided to be proactive and live migrate all of the instances off the node in order to bring it down for some debugging.&lt;/p&gt;
 &lt;p&gt;The following steps are how I brought the node offline with minimal downtime for production instances.&lt;/p&gt;
 &lt;h2&gt;Overview of our cluster&lt;/h2&gt;
 &lt;ul&gt;
@@ -125,159 +678,159 @@
 &lt;/ul&gt;
 &lt;h2&gt;Log into the master node&lt;/h2&gt;
 &lt;p&gt;Log into the master ganeti node.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;ssh&lt;/span&gt; &lt;span class="n"&gt;nebula&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;ssh nebula.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;h2&gt;Migrate the primary instances off suspect node&lt;/h2&gt;
 &lt;p&gt;Run the gnt-node migrate command, passing in the node to migrate off of&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;migrate&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;migrate&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;The output should look similar to this.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;root&lt;/span&gt;&lt;span class="err"&gt;@&lt;/span&gt;&lt;span class="n"&gt;claymore&lt;/span&gt;&lt;span class="o"&gt;:~&lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;migrate&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;
-&lt;span class="n"&gt;Migrate&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="n"&gt;crystal&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;l1011&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
-&lt;span class="n"&gt;marauder&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;nyan&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;panic&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
-&lt;span class="n"&gt;receptacle&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ruby&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sapphire&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
-&lt;span class="n"&gt;webd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;yermom&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="o"&gt;?&lt;/span&gt;
-&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;/?:&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;
-&lt;span class="n"&gt;Submitted&lt;/span&gt; &lt;span class="n"&gt;jobs&lt;/span&gt; &lt;span class="mi"&gt;52820&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52821&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52822&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52823&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52824&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52825&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52826&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52827&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52828&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52829&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52830&lt;/span&gt;
-&lt;span class="p"&gt;[...]&lt;/span&gt;
-&lt;span class="n"&gt;Waiting&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;job&lt;/span&gt; &lt;span class="mi"&gt;52825&lt;/span&gt; &lt;span class="p"&gt;...&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;52&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;Migrating&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt; &lt;span class="n"&gt;crystal&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;52&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;checking&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt; &lt;span class="n"&gt;consistency&lt;/span&gt; &lt;span class="n"&gt;between&lt;/span&gt; &lt;span class="n"&gt;source&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;target&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;56&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;switching&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;claymore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;secondary&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;56&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;changing&lt;/span&gt; &lt;span class="n"&gt;into&lt;/span&gt; &lt;span class="n"&gt;standalone&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;34&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;58&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;changing&lt;/span&gt; &lt;span class="n"&gt;disks&lt;/span&gt; &lt;span class="n"&gt;into&lt;/span&gt; &lt;span class="n"&gt;dual&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;master&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;01&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;wait&lt;/span&gt; &lt;span class="n"&gt;until&lt;/span&gt; &lt;span class="n"&gt;resync&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;02&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;preparing&lt;/span&gt; &lt;span class="n"&gt;claymore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;accept&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;03&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;migrating&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;claymore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;switching&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;secondary&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;wait&lt;/span&gt; &lt;span class="n"&gt;until&lt;/span&gt; &lt;span class="n"&gt;resync&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;27&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;changing&lt;/span&gt; &lt;span class="n"&gt;into&lt;/span&gt; &lt;span class="n"&gt;standalone&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;27&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;changing&lt;/span&gt; &lt;span class="n"&gt;disks&lt;/span&gt; &lt;span class="n"&gt;into&lt;/span&gt; &lt;span class="n"&gt;single&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;master&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;28&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;wait&lt;/span&gt; &lt;span class="n"&gt;until&lt;/span&gt; &lt;span class="n"&gt;resync&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;28&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;
-&lt;span class="p"&gt;[...]&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;root@claymore:~# gnt-node migrate katana
+Migrate instance&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; crystal.cat.pdx.edu, l1011.cat.pdx.edu,
+marauder.cat.pdx.edu, nyan.cat.pdx.edu, panic.cat.pdx.edu,
+receptacle.cat.pdx.edu, ruby.cat.pdx.edu, sapphire.cat.pdx.edu,
+webd.cat.pdx.edu, yermom.cat.pdx.edu, zeratul.cat.pdx.edu?
+y/&lt;span class="o"&gt;[&lt;/span&gt;n&lt;span class="o"&gt;]&lt;/span&gt;/?: y
+Submitted &lt;span class="nb"&gt;jobs &lt;/span&gt;52820, 52821, 52822, 52823, 52824, 52825, 52826, 52827, 52828, 52829, 52830
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+Waiting &lt;span class="k"&gt;for &lt;/span&gt;job 52825 ...
+Wed Mar 20 10:33:52 2013 Migrating instance crystal.cat.pdx.edu
+Wed Mar 20 10:33:52 2013 * checking disk consistency between &lt;span class="nb"&gt;source &lt;/span&gt;and target
+Wed Mar 20 10:33:56 2013 * switching node claymore.cat.pdx.edu to secondary mode
+Wed Mar 20 10:33:56 2013 * changing into standalone mode
+Wed Mar 20 10:34:58 2013 * changing disks into dual-master mode
+Wed Mar 20 10:35:01 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar 20 10:35:02 2013 * preparing claymore.cat.pdx.edu to accept the instance
+Wed Mar 20 10:35:03 2013 * migrating instance to claymore.cat.pdx.edu
+Wed Mar 20 10:35:24 2013 * switching node katana.cat.pdx.edu to secondary mode
+Wed Mar 20 10:35:26 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar 20 10:35:27 2013 * changing into standalone mode
+Wed Mar 20 10:35:27 2013 * changing disks into single-master mode
+Wed Mar 20 10:35:28 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar 20 10:35:28 2013 * &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Some of my instances failed to migrate properly. This seems to be related to this &lt;a href="https://code.google.com/p/ganeti/issues/detail?id=297"&gt;bug&lt;/a&gt;.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;16&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;Migration&lt;/span&gt; &lt;span class="n"&gt;failed&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;aborting&lt;/span&gt;
-&lt;span class="p"&gt;[...]&lt;/span&gt;
-&lt;span class="n"&gt;Job&lt;/span&gt; &lt;span class="mi"&gt;52820&lt;/span&gt; &lt;span class="n"&gt;has&lt;/span&gt; &lt;span class="n"&gt;failed&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Failure&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;command&lt;/span&gt; &lt;span class="n"&gt;execution&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
-&lt;span class="n"&gt;Could&lt;/span&gt; &lt;span class="n"&gt;not&lt;/span&gt; &lt;span class="n"&gt;migrate&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt; &lt;span class="n"&gt;sapphire&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Failed&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;migrate&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Too&lt;/span&gt; &lt;span class="n"&gt;many&lt;/span&gt; &lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;info&lt;/span&gt; &lt;span class="n"&gt;migrate&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt; &lt;span class="n"&gt;broken&lt;/span&gt; &lt;span class="n"&gt;answers&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 10:33:16 2013 Migration failed, aborting
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+Job 52820 has failed: Failure: &lt;span class="nb"&gt;command &lt;/span&gt;execution error:
+Could not migrate instance sapphire.cat.pdx.edu: Failed to migrate instance: Too many &lt;span class="s1"&gt;&amp;#39;info migrate&amp;#39;&lt;/span&gt; broken answers
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Luckly these instances were not being used at the moment and I could use gnt-instance failover.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# Warning! This will reboot the instance&lt;/span&gt;
-&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;instance&lt;/span&gt; &lt;span class="n"&gt;failover&lt;/span&gt; &lt;span class="n"&gt;sapphire&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Warning! This will reboot the instance&lt;/span&gt;
+sudo gnt-instance failover sapphire.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;h2&gt;Evacuate secondaries using gnt-node&lt;/h2&gt;
 &lt;p&gt;After the primaries have been migrated run the gnt-node evacuate command to move the secondaries.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;evacuate&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;secondary&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;only&lt;/span&gt; &lt;span class="n"&gt;node2&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-node evacuate --secondary-only node2.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;gnt-node evacuate failed with a timeout error.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;evacuate&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;secondary&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;only&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;
-&lt;span class="n"&gt;Relocate&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="n"&gt;crystal&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;emerald&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
-&lt;span class="p"&gt;[...]&lt;/span&gt;
-&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;/?:&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;49&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Evacuating&lt;/span&gt; &lt;span class="n"&gt;instances&lt;/span&gt; &lt;span class="n"&gt;from&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;crystal&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;emerald&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fog&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;gameandwatch&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;l1011&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;marauder&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;nydus&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;panic&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;pika&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;receptacle&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;refinery&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ruby&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sapphire&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;warpgate&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;weba&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;webb&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;webc&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;webd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;yermom&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="nl"&gt;Failure:&lt;/span&gt; &lt;span class="n"&gt;command&lt;/span&gt; &lt;span class="n"&gt;execution&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
-&lt;span class="n"&gt;Can&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="n"&gt;get&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Error&lt;/span&gt; &lt;span class="mi"&gt;28&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Operation&lt;/span&gt; &lt;span class="n"&gt;timed&lt;/span&gt; &lt;span class="n"&gt;out&lt;/span&gt; &lt;span class="n"&gt;after&lt;/span&gt; &lt;span class="mi"&gt;60910&lt;/span&gt; &lt;span class="n"&gt;milliseconds&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;out&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="n"&gt;bytes&lt;/span&gt; &lt;span class="n"&gt;received&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-node evacuate --secondary-only katana
+Relocate instance&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; crystal.cat.pdx.edu, emerald.cat.pdx.edu,
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+y/&lt;span class="o"&gt;[&lt;/span&gt;n&lt;span class="o"&gt;]&lt;/span&gt;/?: y
+Wed Mar 20 11:16:49 2013  - INFO: Evacuating instances from node &lt;span class="s1"&gt;&amp;#39;katana.cat.pdx.edu&amp;#39;&lt;/span&gt;: crystal.cat.pdx.edu, emerald.cat.pdx.edu, fog.cat.pdx.edu, gameandwatch.cat.pdx.edu, l1011.cat.pdx.edu, log.cat.pdx.edu, marauder.cat.pdx.edu, nydus.cat.pdx.edu, panic.cat.pdx.edu, pika.cat.pdx.edu, receptacle.cat.pdx.edu, refinery.cat.pdx.edu, ruby.cat.pdx.edu, sapphire.cat.pdx.edu, void.cat.pdx.edu, warpgate.cat.pdx.edu, weba.cat.pdx.edu, webb.cat.pdx.edu, webc.cat.pdx.edu, webd.cat.pdx.edu, yermom.cat.pdx.edu, zeratul.cat.pdx.edu
+Failure: &lt;span class="nb"&gt;command &lt;/span&gt;execution error:
+Can&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;t get data &lt;span class="k"&gt;for &lt;/span&gt;node katana.cat.pdx.edu: Error 28: Operation timed out after 60910 milliseconds with 0 out of -1 bytes received
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;If gnt-node evacuate fails for you can evacuate secondaries per instance.&lt;/p&gt;
 &lt;h2&gt;Evacuate the secondaries using gnt-instance&lt;/h2&gt;
 &lt;p&gt;Locate the instances you want to move.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;instance&lt;/span&gt; &lt;span class="n"&gt;list&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;o&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;pnode&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;snodes&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;grep&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-instance list -o name,pnode,snodes | grep katana
 
-&lt;span class="n"&gt;gameandwatch&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="n"&gt;claymore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;l1011&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;        &lt;span class="n"&gt;rapier&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;   &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;          &lt;span class="n"&gt;dirk&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;     &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;marauder&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;     &lt;span class="n"&gt;rapier&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;   &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;yermom&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;       &lt;span class="n"&gt;dirk&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;     &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+gameandwatch.cat.pdx.edu claymore.cat.pdx.edu katana.cat.pdx.edu
+l1011.cat.pdx.edu        rapier.cat.pdx.edu   katana.cat.pdx.edu
+log.cat.pdx.edu          dirk.cat.pdx.edu     katana.cat.pdx.edu
+marauder.cat.pdx.edu     rapier.cat.pdx.edu   katana.cat.pdx.edu
+yermom.cat.pdx.edu       dirk.cat.pdx.edu     katana.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Run gnt-instance replace-disks and give the name of another node that is not the primary of the instance.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;instance&lt;/span&gt; &lt;span class="n"&gt;replace&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;disks&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt; &lt;span class="n"&gt;claymore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="n"&gt;yermom&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-instance replace-disks -n claymore.cat.pdx.edu yermom.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;The output will look similar to this:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;39&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;Replacing&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;yermom&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;39&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;STEP&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;Check&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;existence&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;39&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Checking&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;rapier&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Checking&lt;/span&gt; &lt;span class="n"&gt;volume&lt;/span&gt; &lt;span class="n"&gt;groups&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;STEP&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;Check&lt;/span&gt; &lt;span class="n"&gt;peer&lt;/span&gt; &lt;span class="n"&gt;consistency&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Checking&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;consistency&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;rapier&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;STEP&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;Allocate&lt;/span&gt; &lt;span class="n"&gt;new&lt;/span&gt; &lt;span class="n"&gt;storage&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Adding&lt;/span&gt; &lt;span class="n"&gt;new&lt;/span&gt; &lt;span class="n"&gt;local&lt;/span&gt; &lt;span class="n"&gt;storage&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;claymore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;44&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;STEP&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;Changing&lt;/span&gt; &lt;span class="n"&gt;drbd&lt;/span&gt; &lt;span class="n"&gt;configuration&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;44&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;activating&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;new&lt;/span&gt; &lt;span class="n"&gt;drbd&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;claymore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;48&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Shutting&lt;/span&gt; &lt;span class="n"&gt;down&lt;/span&gt; &lt;span class="n"&gt;drbd&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;old&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;48&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Detaching&lt;/span&gt; &lt;span class="n"&gt;primary&lt;/span&gt; &lt;span class="n"&gt;drbds&lt;/span&gt; &lt;span class="n"&gt;from&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;network&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;standalone&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;49&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Updating&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt; &lt;span class="n"&gt;configuration&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;49&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Attaching&lt;/span&gt; &lt;span class="n"&gt;primary&lt;/span&gt; &lt;span class="n"&gt;drbds&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;new&lt;/span&gt; &lt;span class="n"&gt;secondary&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;standalone&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;connected&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;50&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;STEP&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;Sync&lt;/span&gt; &lt;span class="n"&gt;devices&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;50&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Waiting&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;instance&lt;/span&gt; &lt;span class="n"&gt;yermom&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;sync&lt;/span&gt; &lt;span class="n"&gt;disks&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;55&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;  &lt;span class="mf"&gt;0.50&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;34&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;00&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;  &lt;span class="mf"&gt;6.90&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;15&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;53&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;27&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;07&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;13.40&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;42&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;28&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;21.00&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;29&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;30&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;27.00&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;32&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;30&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;33.20&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;27&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;31&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;39.50&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;56&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;32&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;44&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;45.80&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;32&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;44&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;45.80&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;49&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;52.10&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;34&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;54&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;58.30&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;54&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;58&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;64.60&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;48&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;37&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;03&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;70.90&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;52&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;38&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;08&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;77.20&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;50&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;39&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;15&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;83.70&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;33&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;90.00&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;44&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;41&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;25&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;disk&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;96.30&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;done&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;37&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;remaining&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;estimated&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;42&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;04&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Instance&lt;/span&gt; &lt;span class="n"&gt;yermom&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;disks&lt;/span&gt; &lt;span class="n"&gt;are&lt;/span&gt; &lt;span class="n"&gt;in&lt;/span&gt; &lt;span class="n"&gt;sync&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;42&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;04&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="n"&gt;STEP&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;Removing&lt;/span&gt; &lt;span class="n"&gt;old&lt;/span&gt; &lt;span class="n"&gt;storage&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;42&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;04&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;INFO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Remove&lt;/span&gt; &lt;span class="n"&gt;logical&lt;/span&gt; &lt;span class="n"&gt;volumes&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 13:24:39 2013 Replacing disk&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; 0 &lt;span class="k"&gt;for &lt;/span&gt;yermom.cat.pdx.edu
+Wed Mar 20 13:24:39 2013 STEP 1/6 Check device existence
+Wed Mar 20 13:24:39 2013  - INFO: Checking disk/0 on rapier.cat.pdx.edu
+Wed Mar 20 13:24:40 2013  - INFO: Checking volume groups
+Wed Mar 20 13:24:40 2013 STEP 2/6 Check peer consistency
+Wed Mar 20 13:24:40 2013  - INFO: Checking disk/0 consistency on node rapier.cat.pdx.edu
+Wed Mar 20 13:24:40 2013 STEP 3/6 Allocate new storage
+Wed Mar 20 13:24:40 2013  - INFO: Adding new &lt;span class="nb"&gt;local &lt;/span&gt;storage on claymore.cat.pdx.edu &lt;span class="k"&gt;for &lt;/span&gt;disk/0
+Wed Mar 20 13:24:44 2013 STEP 4/6 Changing drbd configuration
+Wed Mar 20 13:24:44 2013  - INFO: activating a new drbd on claymore.cat.pdx.edu &lt;span class="k"&gt;for &lt;/span&gt;disk/0
+Wed Mar 20 13:24:48 2013  - INFO: Shutting down drbd &lt;span class="k"&gt;for &lt;/span&gt;disk/0 on old node
+Wed Mar 20 13:24:48 2013  - INFO: Detaching primary drbds from the network &lt;span class="o"&gt;(=&lt;/span&gt;&amp;gt; standalone&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:24:49 2013  - INFO: Updating instance configuration
+Wed Mar 20 13:24:49 2013  - INFO: Attaching primary drbds to new secondary &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;standalone&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; connected&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:24:50 2013 STEP 5/6 Sync devices
+Wed Mar 20 13:24:50 2013  - INFO: Waiting &lt;span class="k"&gt;for &lt;/span&gt;instance yermom.cat.pdx.edu to sync disks.
+Wed Mar 20 13:24:55 2013  - INFO: - device disk/0:  0.50% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 34s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:26:00 2013  - INFO: - device disk/0:  6.90% &lt;span class="k"&gt;done&lt;/span&gt;, 15m 53s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:27:07 2013  - INFO: - device disk/0: 13.40% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 42s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:28:26 2013  - INFO: - device disk/0: 21.00% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 1s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:29:30 2013  - INFO: - device disk/0: 27.00% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 32s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:30:35 2013  - INFO: - device disk/0: 33.20% &lt;span class="k"&gt;done&lt;/span&gt;, 11m 27s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:31:40 2013  - INFO: - device disk/0: 39.50% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 56s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:32:44 2013  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:32:44 2013  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:33:49 2013  - INFO: - device disk/0: 52.10% &lt;span class="k"&gt;done&lt;/span&gt;, 8m 2s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:34:54 2013  - INFO: - device disk/0: 58.30% &lt;span class="k"&gt;done&lt;/span&gt;, 6m 54s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:35:58 2013  - INFO: - device disk/0: 64.60% &lt;span class="k"&gt;done&lt;/span&gt;, 5m 48s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:37:03 2013  - INFO: - device disk/0: 70.90% &lt;span class="k"&gt;done&lt;/span&gt;, 4m 52s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:38:08 2013  - INFO: - device disk/0: 77.20% &lt;span class="k"&gt;done&lt;/span&gt;, 3m 50s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:39:15 2013  - INFO: - device disk/0: 83.70% &lt;span class="k"&gt;done&lt;/span&gt;, 2m 33s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:40:20 2013  - INFO: - device disk/0: 90.00% &lt;span class="k"&gt;done&lt;/span&gt;, 1m 44s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:41:25 2013  - INFO: - device disk/0: 96.30% &lt;span class="k"&gt;done&lt;/span&gt;, 37s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar 20 13:42:04 2013  - INFO: Instance yermom.cat.pdx.edu&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;s disks are in sync.
+Wed Mar 20 13:42:04 2013 STEP 6/6 Removing old storage
+Wed Mar 20 13:42:04 2013  - INFO: Remove logical volumes &lt;span class="k"&gt;for &lt;/span&gt;0
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Sometimes you may get an lvm error that looks like this:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;15&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;18&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;  &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;WARNING&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Can&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="n"&gt;remove&lt;/span&gt; &lt;span class="n"&gt;old&lt;/span&gt; &lt;span class="n"&gt;LV&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Can&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="n"&gt;lvremove&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;exited&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="n"&gt;exit&lt;/span&gt; &lt;span class="n"&gt;code&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;   &lt;span class="n"&gt;Unable&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;deactivate&lt;/span&gt; &lt;span class="n"&gt;open&lt;/span&gt; &lt;span class="n"&gt;ganeti&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="n"&gt;bc9b089&lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="mf"&gt;59f&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;
-&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;4512&lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="n"&gt;a09&lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;e7f756caadbe&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;disk0_meta&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;252&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;\&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;  &lt;span class="n"&gt;Unable&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;deactivate&lt;/span&gt; &lt;span class="n"&gt;logical&lt;/span&gt; &lt;span class="n"&gt;volume&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta&amp;quot;&lt;/span&gt;&lt;span class="err"&gt;\&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;
-&lt;span class="n"&gt;Wed&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;15&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;18&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;       &lt;span class="n"&gt;Hint&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;remove&lt;/span&gt; &lt;span class="n"&gt;unused&lt;/span&gt; &lt;span class="n"&gt;LVs&lt;/span&gt; &lt;span class="n"&gt;manually&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 13:15:18 2013  - WARNING: Can&lt;span class="s1"&gt;&amp;#39;t remove old LV: Can&amp;#39;&lt;/span&gt;t lvremove: exited with &lt;span class="nb"&gt;exit &lt;/span&gt;code 5 -   Unable to deactivate open ganeti-9bc9b089--59f3-
+-4512--9a09--e7f756caadbe.disk0_meta &lt;span class="o"&gt;(&lt;/span&gt;252:7&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;  Unable to deactivate logical volume &lt;span class="s2"&gt;&amp;quot;9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;
+Wed Mar 20 13:15:18 2013       Hint: remove unused LVs manually
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;If this happens you can manually remove the old volume with the lvremove command&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# Log into the node&lt;/span&gt;
-&lt;span class="n"&gt;ssh&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
-&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;lvremove&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="n"&gt;bc9b089&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;59f&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;4512&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="n"&gt;a09&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;e7f756caadbe&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;disk0_meta&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Log into the node&lt;/span&gt;
+ssh katana.cat.pdx.edu
+lvremove /dev/mapper/ganeti-9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;h2&gt;Mark the node offline&lt;/h2&gt;
 &lt;p&gt;The last step is to mark the node offline&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;modify&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;O&lt;/span&gt; &lt;span class="n"&gt;yes&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-node modify -O yes katana.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;gnt-cluster verify should now display that one node is offline&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;cluster&lt;/span&gt; &lt;span class="n"&gt;verify&lt;/span&gt; 
-&lt;span class="p"&gt;[..]&lt;/span&gt;
-&lt;span class="n"&gt;Sat&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;18&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;14&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;Other&lt;/span&gt; &lt;span class="n"&gt;Notes&lt;/span&gt;
-&lt;span class="n"&gt;Sat&lt;/span&gt; &lt;span class="n"&gt;Mar&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;18&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;14&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;   &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;NOTICE&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="n"&gt;offline&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="n"&gt;found&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
-&lt;span class="p"&gt;[..]&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;gnt-cluster verify 
+&lt;span class="o"&gt;[&lt;/span&gt;..&lt;span class="o"&gt;]&lt;/span&gt;
+Sat Mar 23 14:18:14 2013 * Other Notes
+Sat Mar 23 14:18:14 2013   - NOTICE: 1 offline node&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; found.
+&lt;span class="o"&gt;[&lt;/span&gt;..&lt;span class="o"&gt;]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 

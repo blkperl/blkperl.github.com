@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="http://blkperl.github.com/" rel="alternate"></link><link href="http://blkperl.github.com/feeds/solaris.atom.xml" rel="self"></link><id>http://blkperl.github.com/</id><updated>2014-02-19T23:23:00-08:00</updated><entry><title>Using Vagrant with Solaris 11</title><link href="http://blkperl.github.com/vagrant_solaris11.html" rel="alternate"></link><updated>2014-02-19T23:23:00-08:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-02-19:vagrant_solaris11.html</id><summary type="html">&lt;p&gt;I finally got Solaris 11 vagrant boxes working! &lt;/p&gt;
+&lt;p&gt;First you need to download a Solaris 11 iso from Oracle's website. Then use packer to build a solaris11 box file which is explained in Alan Chalmer's &lt;a href="http://resilvered.blogspot.com/2014/02/solaris-vagrant-packer-and-base-box.html"&gt;blog&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Next we need a Vagrantfile, you can pull down mine and modify it for your needs. Then create an iso directory and place your solaris box image in it.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;git clone https://gist.github.com/9108604.git
+mkdir iso
+cp /packer/build/directory/packer_solaris-11.1-amd64_virtualbox.box iso/
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Our Vagrantfile looks like this. To mirror a production setup we are creating a secondary disk on the IDE controller to mirror rpool. Then we create a SATA controller and attach six 1G disks.&lt;/p&gt;
+&lt;div class="gist"&gt;
+    &lt;script src='https://gist.github.com/9108604.js'&gt;&lt;/script&gt;
+    &lt;noscript&gt;
+        &lt;pre&gt;&lt;code&gt;# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  diskroot = "/home/#{ENV['USER']}/VirtualBox\ VMs/"
+
+  config.vm.define "sunosfiler" do |v|
+    v.vm.box = "solaris-11.1"
+    v.vm.hostname = "sunosfiler"
+    v.vm.network :private_network, ip: "192.168.2.13"
+    v.vm.box_url = "iso/packer_solaris-11.1-amd64_virtualbox.box"
+    v.vm.provider :virtualbox do |vb|
+      # Create a sata controller for our disks
+      vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", 'sata']
+      # Create a second disk for the rpool mirror
+      diskname = "#{diskroot}/sunosfiler-ide1.vdi"
+      vb.customize ['createhd', '--filename', diskname, '--size', 8 * 1024]
+      vb.customize ['storageattach', :id, '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', diskname]
+    end
+    # Create six disks for a zpool
+    v.vm.provider :virtualbox do |vb|
+      ["1","2","3","4","5","6"].each do |disk|
+       diskname = "#{diskroot}/sunosfiler-sata#{disk}.vdi"
+       vb.customize ['createhd', '--filename', diskname, '--size', 1024]
+       vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk, '--device', 0, '--type', 'hdd', '--medium', diskname]
+      end
+    end
+  end
+end&lt;/code&gt;&lt;/pre&gt;
+    &lt;/noscript&gt;
+&lt;/div&gt;
+&lt;p&gt;Now that we have everything we need we can start the vm with vagrant up.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;vagrant up
+Bringing machine &lt;span class="s1"&gt;&amp;#39;sunosfiler&amp;#39;&lt;/span&gt; up with &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt; provider...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt; was not found. Fetching box from specified URL &lt;span class="k"&gt;for&lt;/span&gt;
+the provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;. Note that &lt;span class="k"&gt;if &lt;/span&gt;the URL does not have
+a box &lt;span class="k"&gt;for &lt;/span&gt;this provider, you should interrupt Vagrant now and add
+the box yourself. Otherwise Vagrant will attempt to download the
+full box prior to discovering this error.
+Downloading or copying the box...
+Extracting box...te: 25.0M/s, Estimated &lt;span class="nb"&gt;time &lt;/span&gt;remaining: 0:00:01&lt;span class="o"&gt;)&lt;/span&gt;
+Successfully added box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt; with provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;!
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Importing base box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt;...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Matching MAC address &lt;span class="k"&gt;for &lt;/span&gt;NAT networking...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting the name of the VM...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting the name of the VM...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Clearing any previously &lt;span class="nb"&gt;set &lt;/span&gt;forwarded ports...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Creating shared folders metadata...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Clearing any previously &lt;span class="nb"&gt;set &lt;/span&gt;network interfaces...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Preparing network interfaces based on configuration...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Forwarding ports...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; -- &lt;span class="nv"&gt;22&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; 2222 &lt;span class="o"&gt;(&lt;/span&gt;adapter 1&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Running any VM customizations...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Booting VM...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Waiting &lt;span class="k"&gt;for &lt;/span&gt;VM to boot. This can take a few minutes.
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; VM booted and ready &lt;span class="k"&gt;for &lt;/span&gt;use!
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting hostname...
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now we login and become the root user.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;vagrant ssh
+sudo -i
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Next let's take a look at the disks that we attached. You can use the format command to list the availible disks.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;format
+Searching &lt;span class="k"&gt;for &lt;/span&gt;disks...done
+
+
+AVAILABLE DISK SELECTIONS:
+       0. c7d0 &amp;lt;VBOX HAR-bafb5063-0735aa9-0001-8.00GB&amp;gt;
+          /pci@0,0/pci-ide@1,1/ide@0/cmdk@0,0
+       1. c8d0 &amp;lt;VBOX HAR-196ca772-16ab95f-0001 cyl 4093 alt 2 hd 128 sec 32&amp;gt;
+          /pci@0,0/pci-ide@1,1/ide@1/cmdk@0,0
+       2. c9t1d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@1,0
+       3. c9t2d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@2,0
+       4. c9t3d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@3,0
+       5. c9t4d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@4,0
+       6. c9t5d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@5,0
+       7. c9t6d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+          /pci@0,0/pci8086,2829@d/disk@6,0
+Specify disk &lt;span class="o"&gt;(&lt;/span&gt;enter its number&lt;span class="o"&gt;)&lt;/span&gt;:
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You can see that c7d0 and c8d0 are our 8G system disks attached to the IDE controller. Let's attach c8d0 to the rpool and make a mirror.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;zpool attach rpool c7d0 c8d0
+Make sure to &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resilver is &lt;span class="k"&gt;done &lt;/span&gt;before rebooting.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If we examine the pool now, we can see it resilvering.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;zpool&lt;/span&gt; &lt;span class="nx"&gt;status&lt;/span&gt; &lt;span class="nx"&gt;rpool&lt;/span&gt;
+  &lt;span class="nx"&gt;pool&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;rpool&lt;/span&gt;
+ &lt;span class="nx"&gt;state&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;DEGRADED&lt;/span&gt;
+&lt;span class="nx"&gt;status&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;One&lt;/span&gt; &lt;span class="nx"&gt;or&lt;/span&gt; &lt;span class="nx"&gt;more&lt;/span&gt; &lt;span class="nx"&gt;devices&lt;/span&gt; &lt;span class="nx"&gt;is&lt;/span&gt; &lt;span class="nx"&gt;currently&lt;/span&gt; &lt;span class="nx"&gt;being&lt;/span&gt; &lt;span class="nx"&gt;resilvered&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;  &lt;span class="nx"&gt;The&lt;/span&gt; &lt;span class="nx"&gt;pool&lt;/span&gt; &lt;span class="nx"&gt;will&lt;/span&gt;
+        &lt;span class="k"&gt;continue&lt;/span&gt; &lt;span class="nx"&gt;to&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nx"&gt;a&lt;/span&gt; &lt;span class="nx"&gt;degraded&lt;/span&gt; &lt;span class="nx"&gt;state&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+&lt;span class="nx"&gt;action&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;Wait&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nx"&gt;the&lt;/span&gt; &lt;span class="nx"&gt;resilver&lt;/span&gt; &lt;span class="nx"&gt;to&lt;/span&gt; &lt;span class="nx"&gt;complete&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+        &lt;span class="nx"&gt;Run&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;zpool status -v&amp;#39;&lt;/span&gt; &lt;span class="nx"&gt;to&lt;/span&gt; &lt;span class="nx"&gt;see&lt;/span&gt; &lt;span class="nx"&gt;device&lt;/span&gt; &lt;span class="nx"&gt;specific&lt;/span&gt; &lt;span class="nx"&gt;details&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+  &lt;span class="nx"&gt;scan&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;resilver&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nx"&gt;progress&lt;/span&gt; &lt;span class="nx"&gt;since&lt;/span&gt; &lt;span class="nx"&gt;Thu&lt;/span&gt; &lt;span class="nx"&gt;Feb&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;19&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;00&lt;/span&gt; &lt;span class="mi"&gt;2014&lt;/span&gt;
+    &lt;span class="mi"&gt;809&lt;/span&gt;&lt;span class="nx"&gt;M&lt;/span&gt; &lt;span class="nx"&gt;scanned&lt;/span&gt; &lt;span class="nx"&gt;out&lt;/span&gt; &lt;span class="nx"&gt;of&lt;/span&gt; &lt;span class="mf"&gt;3.69&lt;/span&gt;&lt;span class="nx"&gt;G&lt;/span&gt; &lt;span class="nx"&gt;at&lt;/span&gt; &lt;span class="mf"&gt;38.5&lt;/span&gt;&lt;span class="nx"&gt;M&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="nx"&gt;s&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="nx"&gt;h1m&lt;/span&gt; &lt;span class="nx"&gt;to&lt;/span&gt; &lt;span class="nx"&gt;go&lt;/span&gt;
+    &lt;span class="mi"&gt;777&lt;/span&gt;&lt;span class="nx"&gt;M&lt;/span&gt; &lt;span class="nx"&gt;resilvered&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;21.40&lt;/span&gt;&lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="nx"&gt;done&lt;/span&gt;
+&lt;span class="nx"&gt;config&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+
+        &lt;span class="nx"&gt;NAME&lt;/span&gt;        &lt;span class="nx"&gt;STATE&lt;/span&gt;     &lt;span class="nx"&gt;READ&lt;/span&gt; &lt;span class="nx"&gt;WRITE&lt;/span&gt; &lt;span class="nx"&gt;CKSUM&lt;/span&gt;
+        &lt;span class="nx"&gt;rpool&lt;/span&gt;       &lt;span class="nx"&gt;DEGRADED&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;
+          &lt;span class="nx"&gt;mirror&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;  &lt;span class="nx"&gt;DEGRADED&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;
+            &lt;span class="nx"&gt;c7d0&lt;/span&gt;    &lt;span class="nx"&gt;ONLINE&lt;/span&gt;       &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;
+            &lt;span class="nx"&gt;c8d0&lt;/span&gt;    &lt;span class="nx"&gt;DEGRADED&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;     &lt;span class="mi"&gt;0&lt;/span&gt;  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;resilvering&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="nx"&gt;errors&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;No&lt;/span&gt; &lt;span class="nx"&gt;known&lt;/span&gt; &lt;span class="nx"&gt;data&lt;/span&gt; &lt;span class="nx"&gt;errors&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;After a few minutes it should be fully online. Then we need to install grub on the new disk&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;bootadm install-bootloader -P rpool
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now that our root pool is setup we can move on to our storage pool. I choose to mirror every disk but you can choose whatever raid configuration you prefer.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;zpool create stark mirror c9t1d0 c9t2d0 mirror c9t3d0 c9t4d0 mirror c9t5d0 c9t6d0
+zpool status stark
+  pool: stark
+ state: ONLINE
+  scan: none requested
+config:
+
+        NAME        STATE     READ WRITE CKSUM
+        stark       ONLINE       0     0     0
+          mirror-0  ONLINE       0     0     0
+            c9t1d0  ONLINE       0     0     0
+            c9t2d0  ONLINE       0     0     0
+          mirror-1  ONLINE       0     0     0
+            c9t3d0  ONLINE       0     0     0
+            c9t4d0  ONLINE       0     0     0
+          mirror-2  ONLINE       0     0     0
+            c9t5d0  ONLINE       0     0     0
+            c9t6d0  ONLINE       0     0     0
+
+errors: No known data errors
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;At this point our storage is configured and we can move on to creating filesystems, setting up services, or running tests.&lt;/p&gt;
+&lt;p&gt;Happy Hacking!&lt;/p&gt;</summary><category term="solaris"></category><category term="vagrant"></category></entry><entry><title>Removing a patch from Solaris 10</title><link href="http://blkperl.github.com/remove_solaris_patch.html" rel="alternate"></link><updated>2013-03-27T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-03-27:remove_solaris_patch.html</id><summary type="html">&lt;p&gt;In this example we removed a custom IDR patch provided by Oracle.&lt;/p&gt;
+&lt;h2&gt;Check to see if the patch is installed&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;caerbannog# showrev -p | grep 148363
+Patch: IDR148363-26 Obsoletes:  Requires: 147441-26 Incompatibles: 147441-27 Packages: SUNWnfsckr, SUNWzfskr, SUNWzfsu, SUNWzfsr
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Remove the patch with patchrm&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;caerbannog# patchrm IDR148363-26
+Validating patches...
+
+Loading patches installed on the system...
+
+Done!
+
+Checking patches that you specified &lt;span class="k"&gt;for &lt;/span&gt;removal.
+
+Done!
+
+Approved patches will be removed in this order:
+
+IDR148363-26
+Preparing checklist &lt;span class="k"&gt;for &lt;/span&gt;non-global zone check...
+
+Checking non-global zones...
+
+
+This patch passes non-global zone check.
+IDR148363-26
+
+
+Summary &lt;span class="k"&gt;for &lt;/span&gt;zones:
+
+Zone crisco
+
+Rejected patches:
+None.
+tches that passed the dependency check:
+None.
+
+
+Removing patches from non-global zones
+
+Removing patches from zone crisco
+Removing patch IDR148363-26...
+Done!
+
+Checking installed patches...
+
+Backing out patch IDR148363-26...
+
+Patch IDR148363-26 has been backed out.
+
+
+Removing patches from zone nt4
+
+Removing patches from zone sfw
+
+Removing patches from global zone
+Removing patch IDR148363-26...
+
+Checking installed patches...
+
+Executing prebackout script...
+Backing out patch IDR148363-26...
+
+Executing postbackout script...
+Patch IDR148363-26 has been backed out.
+
+Done!
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="solaris"></category></entry></feed>

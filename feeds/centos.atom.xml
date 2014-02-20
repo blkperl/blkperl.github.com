@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="http://blkperl.github.com/" rel="alternate"></link><link href="http://blkperl.github.com/feeds/centos.atom.xml" rel="self"></link><id>http://blkperl.github.com/</id><updated>2013-05-18T21:35:00-07:00</updated><entry><title>Installing Sunray Software Server (SRSS) on Centos 5.x</title><link href="http://blkperl.github.com/centos_sunray.html" rel="alternate"></link><updated>2013-05-18T21:35:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-05-18:centos_sunray.html</id><summary type="html">&lt;p&gt;These are the steps I took to get the SunRay software working on Centos. I was able to get this working thanks to scraps of information from &lt;a href="http://blog.parahard.com/2009/06/installing-sunray-ii- erver-software-on.html"&gt;Peter Senna Tschudin's blog&lt;/a&gt; In addition to get it working on 32bit like in Peter's blog, I also got it working on 64 bit. These are the instructions for 64bit.&lt;/p&gt;
+&lt;p&gt;The SunRays we have are the SunRay 2 model updated with the latest firmware.&lt;/p&gt;
+&lt;h2&gt;Download the software from Oracle's support portal (requires login)&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/
+&lt;span class="c"&gt;# download files from Oracle&amp;#39;s website&lt;/span&gt;
+unzip V37034-01.zip
+unzip p16406547_111_Generic.zip
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Install the dependencies&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install glib dhcp openldap-clients tftp-server libXp libXfont.i386 openmotif22 openssl compat-libstdc++-33 libusb-devel compat-openldap kernel-devel gdbm.i386 gcc openmotif.i386 sssd-client.i386
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If you are not using sssd you will need to install the nscd.i386 package.&lt;/p&gt;
+&lt;h2&gt;Install the firmware&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/sros_11.1.1.0/
+./utfwinstall 
+Installing Sun Ray Operating Software 11.1.1.0
+
+Sun Ray Operating Software 11.1.1.0 has been successfully installed.
+
+This output has been logged to
+
+    /var/log/utfwinstall.2013_05_09_14:48:54.log
+
++++ Done.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Install the bundled JRE and Apache Tomcat&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/srs_5.4.0.0-Linux.i386/Supplemental/Java_Runtime_Environment/Linux
+sh jre-6u41-linux-i586.bin 
+mv jre1.6.0_41/ /opt/
+&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/srs_5.4.0.0-Linux.i386/Supplemental/Apache_Tomcat
+gunzip apache-tomcat-5.5.36.tar.gz
+tar xvf apache-tomcat-5.5.36.tar 
+mv apache-tomcat-5.5.36 /opt/
+ln -s /opt/apache-tomcat-5.5.36/ /opt/apache-tomcat
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Install the Sunray Server Software&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /opt/srs_5.4.0.0-Linux.i386
+./utsetup
+
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+Accept? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; y
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+Enter Java v1.6 &lt;span class="o"&gt;(&lt;/span&gt;or later&lt;span class="o"&gt;)&lt;/span&gt; location: &lt;span class="o"&gt;[&lt;/span&gt;/usr/java&lt;span class="o"&gt;]&lt;/span&gt; /opt/jre1.6.0_41/
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+Continue? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt; y
+
+Enter new UT admin password:  
+Again: Enter new UT admin password:  
+Configure Sun Ray Web Administration? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt; y
+
+Enter Apache Tomcat installation directory &lt;span class="o"&gt;[&lt;/span&gt;/opt/apache-tomcat&lt;span class="o"&gt;]&lt;/span&gt;
+
+Enter HTTP port number &lt;span class="o"&gt;[&lt;/span&gt;1660&lt;span class="o"&gt;]&lt;/span&gt; 8080
+
+Enable secure connections? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt; y
+
+Enter HTTPS port number &lt;span class="o"&gt;[&lt;/span&gt;1661&lt;span class="o"&gt;]&lt;/span&gt; 8081
+
+Enter Tomcat process username &lt;span class="o"&gt;[&lt;/span&gt;utwww&lt;span class="o"&gt;]&lt;/span&gt;
+
+Enable remote server administration? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt; Y
+
+Configure Sun Ray Kiosk Mode? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt; N
+
+Configure this server &lt;span class="k"&gt;for &lt;/span&gt;a failover group? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt;
+
+About to configure the following software products:
+
+Sun Ray Data Store 3.5
+    Hostname: mysunrayserver.example.org
+    Sun Ray root entry: &lt;span class="nv"&gt;o&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;utdata
+    Sun Ray root name: utdata
+    Sun Ray utdata admin password: &lt;span class="o"&gt;(&lt;/span&gt;not shown&lt;span class="o"&gt;)&lt;/span&gt;
+    SRDS &lt;span class="s1"&gt;&amp;#39;rootdn&amp;#39;&lt;/span&gt;: &lt;span class="nv"&gt;cn&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;admin,o&lt;span class="o"&gt;=&lt;/span&gt;utdata
+
+Sun Ray Web Administration hosted at Apache Tomcat/5.5.36
+    Apache Tomcat installation directory: /opt/apache-tomcat
+    HTTP port number: 8080
+    HTTPS port number: 8081
+    Tomcat process username: utwww
+    Remote server administration: Enabled
+
+Sun Ray Server Software 4.5
+    Failover group: no
+    Sun Ray Kiosk Mode: no
+Continue? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
+
+Enter groupname &lt;span class="k"&gt;for &lt;/span&gt;Windows Connector &lt;span class="o"&gt;[&lt;/span&gt;utwc&lt;span class="o"&gt;]&lt;/span&gt;
+
+Enter group ID &lt;span class="o"&gt;(&lt;/span&gt;gid&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="k"&gt;for &lt;/span&gt;the group &lt;span class="o"&gt;[&lt;/span&gt;auto&lt;span class="o"&gt;]&lt;/span&gt;
+
+Do you want to configure Firmware downloads &lt;span class="k"&gt;for &lt;/span&gt;Sun Ray clients? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Reboot&lt;/h2&gt;
+&lt;p&gt;Seriously you should reboot&lt;/p&gt;
+&lt;h2&gt;If the services are not running on reboot&lt;/h2&gt;
+&lt;p&gt;You can manually start them with:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;/opt/SUNWut/sbin/utadm -L on
+/opt/SUNWut/sbin/utstart
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;SunRay Web Administration&lt;/h2&gt;
+&lt;p&gt;Log into &lt;a href="https://mysunrayserver.example.org:8081"&gt;https://mysunrayserver.example.org:8081&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;With the user: admin and the password you specified in the installer.&lt;/p&gt;
+&lt;p&gt;Note: Replace port 8081 with the port you selected in the installer if you did not select 8081.&lt;/p&gt;
+&lt;p&gt;If you can't log in because the "data store is not responding" proceed to the debugging section.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Click "Advanced"&lt;/li&gt;
+&lt;li&gt;Check all the encryption buttons&lt;/li&gt;
+&lt;li&gt;Switch soft to hard for client and server&lt;/li&gt;
+&lt;li&gt;Following instruction to restart client&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Debugging&lt;/h2&gt;
+&lt;p&gt;The following two log files were especially helpful in debugging problems.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;tail -f /var/opt/SUNWut/log/messages
+tail -f /var/log/autholog
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Security&lt;/h2&gt;
+&lt;p&gt;We have the SunRays in there own vlan and only the SunRay servers are allowed to communicate with them. You should also firewall the Web Admin ports in my case port 8080 and 8081.&lt;/p&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;I havn't had a lot of luck with a consistent installation using the instructions above. If it doesn't work the first time try uninstalling and resintalling the SunRay software. Also I was doing this with SELinux disabled and we already had working SunRays with Solaris 10 so I can't really comment on the dhcp configs or any special network acls we may have in place.&lt;/p&gt;</summary><category term="centos"></category><category term="sunray"></category><category term="oracle"></category><category term="rhel"></category><category term="redhat"></category></entry></feed>
