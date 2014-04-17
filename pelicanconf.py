@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- #
 
 AUTHOR = u'William Van Hevelingen'
-SITENAME = u'zfs snapshot blkperl/dev/brain@Today'
+SITENAME = u'puppet resource blog author=blkperl'
 SITEURL = ''
 
 TIMEZONE = 'America/Los_Angeles'
@@ -19,3 +19,5 @@ TWITTER_USERNAME='pdx_blkperl'
 PLUGINS = [
     'pelican_gist',
 ]
+
+STATIC_PATHS = ['images']
