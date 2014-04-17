@@ -6,11 +6,11 @@ Slug: building_devops_dashboards_with_puppet
 Author: William Van Hevelingen
 Summary: Building DevOps Dashboards with Puppet
 
-Graphite is awesome. The variety of metrics that you can put in it and the ability to build graphs to visualize specific things is an invaluable tool. However, most of the time, I just want to be able to do a quick glance at a few key things on a server like CPU usage, memory usage, disk I/O, and network traffic. While it's easy to bring these graphs up individually. In the default Graphite web UI, it's a bit harder to flip through several different server metrics quickly. Not to mention getting them in the particular way you want to view them.
+Graphite is awesome. The variety of metrics that you can put in it and the ability to build graphs to visualize specific things is an invaluable tool. However, most of the time, I just want to be able to do a quick glance at a few key things on a server like CPU usage, memory usage, disk I/O, and network traffic. While it's easy to bring these graphs up individually, in the default Graphite web UI, it's a bit harder to flip through several different server metrics quickly. Not to mention getting them in the particular way you want to view them.
 
-At this point, you want to build a DevOps dashboard and there's a ton of choices to choose from that goes way beyond the capabilities of the default Graphite web UI. You still end up with the problem of building a dashboard for each host and I have 200+ nodes. Sure, I could write a script to do it but why repeat myself when Puppet could do this for me.
+At this point, you want to build a DevOps dashboard and there's a ton of choices to choose from that goes way beyond the capabilities of the default Graphite web UI. Although, you still end up with the problem of building a dashboard for each host and I have 200+ nodes. Sure, I could write a script to do it but why repeat myself when Puppet could do this for me.
 
-I just needed to find a Graphite dashboard that I could easily model in Puppet via config files. Originally, I looked at Gdash by @ripienaar. It implements a simple DSL for Graphite that I could have been easily modeled in Puppet templates but I just so happened upon the following tweet.
+I just needed to find a Graphite dashboard that I could easily model in Puppet via config files. Originally, I looked at Gdash by @ripienaar. It implements a simple DSL for Graphite that I could have easily modeled in Puppet templates but I just so happened upon the following tweet.
 
 <blockquote class="twitter-tweet" lang="en"><p>New GDash inspired dashboard for Graphite <a href="http://t.co/8AJEZX1Jvl">http://t.co/8AJEZX1Jvl</a> from <a href="https://twitter.com/juliendehee">@juliendehee</a></p>&mdash; R.I.Pienaar (@ripienaar) <a href="https://twitter.com/ripienaar/statuses/423934247750365184">January 16, 2014</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
@@ -73,7 +73,7 @@ Role Based Graphs
 
 Now that we have a bunch of graphs that should be displayed for each node we can start adding ones for specific roles. Similar to the way you might export Nagios service checks depending on a Puppet class we can do the same with exporting leonardo dashboard resources.
 
-Lets say we have an OpenVPN role. Normally, we would have have our server configuration, monitoring, and environment specific code defined in this file so adding leonardo resources is a natural extension.
+Let's say we have an OpenVPN role. Normally, we would have have our server configuration, monitoring, and environment specific code defined in this file so adding leonardo resources is a natural extension.
 
 [gist:id=10961436]
 
