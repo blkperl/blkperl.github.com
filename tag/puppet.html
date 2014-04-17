@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>zfs snapshot blkperl/dev/brain@Today - puppet</title>
+        <title>puppet resource blog author=blkperl - puppet</title>
         <link rel="stylesheet" href="http://blkperl.github.com/theme/css/main.css" />
-        <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="zfs snapshot blkperl/dev/brain@Today Atom Feed" />
+        <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="puppet resource blog author=blkperl Atom Feed" />
 
         <!--[if IE]>
             <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -13,10 +13,11 @@
 
 <body id="index" class="home">
         <header id="banner" class="body">
-                <h1><a href="http://blkperl.github.com/">zfs snapshot blkperl/dev/brain@Today </a></h1>
+                <h1><a href="http://blkperl.github.com/">puppet resource blog author=blkperl </a></h1>
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
+                    <li><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
                     <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
                     <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
@@ -25,7 +26,165 @@
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="http://blkperl.github.com/puppet-dev-with-lxc.html">Creating a Puppet development environment with LXC</a></h1>
+                    <h1 class="entry-title"><a href="http://blkperl.github.com/building_devops_dashboards_with_puppet.html">Building DevOps Dashboards with Puppet</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2014-04-17T00:13:00">
+                Thu 17 April 2014
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/puppet.html">puppet</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/puppet.html">puppet</a><a href="http://blkperl.github.com/tag/graphite.html">graphite</a><a href="http://blkperl.github.com/tag/leonardo.html">leonardo</a><a href="http://blkperl.github.com/tag/metrics.html">metrics</a></p>
+</footer><!-- /.post-info --><p>Graphite is awesome. The variety of metrics that you can put in it and the ability to build graphs to visualize specific things is an invaluable tool. However, most of the time I just want to be able to do a quick glance at a few key things on a server like CPU usage, memory usage, disk IO and network traffic. While its easy to bring these up individually in the default Graphite web UI it's a bit hard to flip through several different server metrics quickly. Not to mention getting them in the particular way you want to view them.</p>
+<p>At this point you want to build a DevOps dashboard and theres a ton of choices to choose from that goes way beyond the capabilities of the default Graphite web UI. You still end up with problem of building a dashboard for each host though and I have 200+ nodes. Sure I could write a script to do it but why repeat myself when Puppet could do this for me.</p>
+<p>I just needed to find a Graphite dashboard that I could easily model in Puppet via config files. Originally, I looked at Gdash by @ripienaar. It implements a simple DSL for Graphite that I could have been easily modeled in Puppet templates but I just happened to have seen the following tweet.</p>
+<blockquote class="twitter-tweet" lang="en"><p>New GDash inspired dashboard for Graphite <a href="http://t.co/8AJEZX1Jvl">http://t.co/8AJEZX1Jvl</a> from <a href="https://twitter.com/juliendehee">@juliendehee</a></p>&mdash; R.I.Pienaar (@ripienaar) <a href="https://twitter.com/ripienaar/statuses/423934247750365184">January 16, 2014</a></blockquote>
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>@juliendehee's Leonardo dashboard for Graphite is a simple Python Flask app that hits the Graphite render API to generate graphs. Instead of a DSL language like GDash it uses YAML files. At this point I was positive someone had already written a Puppet type for YAML so I went looking on the Puppet Forge and sure enough Reid had already done the work for me.</p>
+<p><a href="https://forge.puppetlabs.com/reidmv/yamlfile">https://forge.puppetlabs.com/reidmv/yamlfile</a></p>
+<p>A few hours of hacking later and I had a Puppet module for Leonardo. It works exactly like the Nagios host/service pattern using exported resources.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Your Puppet Masters need to be using PuppetDB.</li>
+<li>You need to install a recent version of Puppet (&gt;= 3.4.x) with Future parser enabled</li>
+</ul>
+<h2>Installation</h2>
+<p>To get started you need to add the leonardo module to your Puppet masters.</p>
+<div class="highlight"><pre><span class="n">puppet</span> <span class="n">module</span> <span class="n">install</span> <span class="n">pdxcat</span><span class="o">-</span><span class="n">leonardo</span>
+</pre></div>
+
+
+<p>Or you can download it directly from <a href="https://github.com/pdxcat/puppet-module-leonardo">GitHub</a>.</p>
+<h2>Leonardo server configuration</h2>
+<p>Next you will want install a Leonardo server on a webserver. Below you can see my <code>role::leonardo</code> puppet class. Include this class in your leonardo servers node definition. The leonardo class installs the packages needed for Leonardo, does some basic configuration and does a git clone of the source code from GitHub [1]. You can choose to omit the Leonardo class if you want to do it differently. Also since web server configuration is usually environment specific I'm going to omit it from this blog post but there is an example for setting it up with Apache in the <code>test/init.pp</code> file using the puppetlabs/apache module [2].</p>
+<p>The key lines to understand in this code snippet is the "mothership" operators also called exported resource collectors [3]. Lines 15-17 will collect all the leonardo resources that we are going to export on our target nodes. Then whenever the leonardo server checks in with Puppet it will ensure that all leonardo resources are created.</p>
+<div class="gist">
+    <script src='https://gist.github.com/10956900.js'></script>
+    <noscript>
+        <pre><code>class role::leonardo {
+
+  $template_dir = '/opt/leonardo/leonardo/graphs'
+
+  class { '::leonardo':
+    graphite_url => 'https://graphite.example.org',
+    template_dir => $template_dir,
+    install_dir  => '/opt/leonardo/leonardo',
+  }->
+  file { [$template_dir, "${template_dir}/servers"]:
+    ensure => directory,
+  }
+
+  # Environment tag can be removed when environment support is added to PuppetDB
+  File                <<| tag == "env_leonardo_${::environment}" |>> {}
+  Leonardo::Dashboard <<| tag == "env_leonardo_${::environment}" |>> {}
+  Leonardo::Graph     <<| tag == "env_leonardo_${::environment}" |>> {}
+}
+</code></pre>
+    </noscript>
+</div>
+<h2>Leonardo client configuration</h2>
+<p>For the target node configuration we need to exports resources. The following code snippet contains an example <code>role::leonardo::client</code>. Include the <code>role::leonardo::client</code> class on every node that you want a dashboard for.</p>
+<div class="gist">
+    <script src='https://gist.github.com/9826382.js'></script>
+    <noscript>
+        <pre><code>  $dashboard_root = '/var/www/leonardo/graphs/servers',
+  $collectd_name  = regsubst($::fqdn, '\.', '_', 'G'),
+  $dashboard_dir  = "${dashboard_root}/${::hostname}",
+
+  # Each dashboard needs a directory to hold the graph files
+  @@file { $dashboard_dir:
+    ensure => directory,
+    mode   => '0755',
+    tag    => "env_leonardo_${environment}",
+  }
+
+  # Each dashboard needs a a dash.yaml file
+  @@leonardo::dashboard { $::hostname:
+    target             => "${dashboard_dir}/dash.yaml",
+    name               => $::hostname,
+    description        => 'System Metrics',
+    include_properties => ['common.yaml'],
+    tag                => "env_${environment}",
+    require            => File[$dashboard_dir],
+  }
+</code></pre>
+    </noscript>
+</div>
+<p>In this particular example we are exporting a leonardo dashboard file, a directory for each server to hold the graphs, and a CPU graph. Check out the link at the bottom for our current list of graphs that we export on all nodes [4]. It should be a good starting point for getting the more common graphs up and running.</p>
+<h2>Graphs and Profit!</h2>
+<p>After running Puppet on both the target node and the Leonardo server you should see a servers dropdown menu. Upon selecting a server from the list you should see something similar to the dashboard below.</p>
+<p><img alt="Leonardo Dashboard" src="http://blkperl.github.com/images/leonardo_dashboard.png" /></p>
+<p>Once you're confident that you have the graphs you want defined in Puppet and tested on one node. Include the leonardo client class on all your nodes and watch as it creates a dashboard for each server as Puppet nodes checkin and Puppet runs on your Leonardo server.</p>
+<h2>Role Based Graphs</h2>
+<p>Now that we have a bunch of graphs that should be displayed for each node we can start adding ones for specific roles. Similar to the way you might export Nagios service checks depending on a Puppet class we can do the same with exporting leonardo dashboard resources.</p>
+<p>Let say we have an OpenVPN role. Normally, we would have have our server configuration, monitoring, and environment specific code defined in this file so adding leonardo resources is a natural extension.</p>
+<div class="gist">
+    <script src='https://gist.github.com/10961436.js'></script>
+    <noscript>
+        <pre><code>class role::vpnserver {
+
+  class { 'openvpn::server':
+     # environment specific parameters
+  }
+
+  class { 'collectd::plugin::openvpn':
+    # environment specific parameters
+  }
+
+  @@leonardo::graph { "${::hostname}-openvpn":
+    target     => "${dashboard_dir}/90-openvpn.graph",
+    parameters => { 'title'    => 'OpenVPN connected users',
+                    'vtitle'   => 'Users',
+                    'linemode' => 'connected' },
+    fields     => {
+                    'users'   => { 'data' => "sumSeries(collectd.${collectd_name}.openvpn*.*)",},
+                  },
+    tag       => "env_leonardo_${environment}",
+  }
+
+}
+</code></pre>
+    </noscript>
+</div>
+<p>This ability is incredibly powerful because all that metadata that Puppet knows about your infrastructure via puppet classes is now available to help you build automated dashboards. You can take it a step further by exporting Graphs to role based Dashboards. For example a custom dashboard for an applications with graphs from the webserver, load balancers and database servers.</p>
+<h2>Caveats</h2>
+<p>The current implement has a few issues that I'm going to gloss over in this post. Pull requests welcome to help fix them.</p>
+<ul>
+<li>Removing exported resources from PuppetDB is still a bit of a challenge</li>
+<li>Currently, old dashboards need to be manually removed as a purge parameter is not yet implemented</li>
+<li>Yamlfile can be really slow on initial runs with a large number of hosts</li>
+</ul>
+<h2>Summary</h2>
+<p>TL;DR I used unreleased Puppet features to make shiny dashboards with very little effort thanks to Graphite, Collectd and Puppet</p>
+<h2>Resources</h2>
+<ul>
+<li><a href="http://docs.puppetlabs.com/puppet/latest/reference/experiments_future.html">Puppet Future Parser</a></li>
+<li><a href="https://docs.puppetlabs.com/puppetdb/latest/">PuppetDB</a></li>
+</ul>
+<h2>References</h2>
+<ul>
+<li>[1] At the time of writing there are no packages for Leonardo available</li>
+<li>[2] <a href="https://github.com/pdxcat/puppet-module-leonardo/blob/master/tests/init.pp">Installing Leonardo with Apache example puppet manifest</a></li>
+<li>[3] <a href="http://docs.puppetlabs.com/puppet/latest/reference/lang_exported.html#collecting-exported-resources">Docs on Exported resource collectors</a></li>
+<li>[4] <a href="https://gist.github.com/blkperl/10958057">Full Leonardo client example</a> (Note: this very much a work in progress)</li>
+</ul>                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="http://blkperl.github.com/puppet-dev-with-lxc.html" rel="bookmark"
+                           title="Permalink to Creating a Puppet development environment with LXC">Creating a Puppet development environment with LXC</a></h1>
+                </header>
+
+                <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2013-05-26T16:00:00">
                 Sun 26 May 2013
@@ -36,149 +195,10 @@
         </address>
 <p>In <a href="http://blkperl.github.com/category/lxc.html">lxc</a>. </p>
 <p>tags: <a href="http://blkperl.github.com/tag/lxc.html">lxc</a><a href="http://blkperl.github.com/tag/puppet.html">puppet</a></p>
-</footer><!-- /.post-info --><p>This blog post is about my development setup on my laptop for testing out new software. You will learn how you can easily create LXC containers and connect them to a puppet master in about 20 minutes using the awesome cloning features of LXC.</p>
-<p>LXC is a lightweight container virtualization technology very similar to Solaris zones and FreeBSD jails and is availible on most Linux distributions. To learn more and read the docs check out the links at the bottom of the post. </p>
-<p>The first step is to install it.</p>
-<h2>Install LXC</h2>
-<p>On Ubuntu installing LXC is easy and the package comes with working Ubuntu and Debian templates.</p>
-<div class="highlight"><pre>sudo apt-get install lxc
-</pre></div>
-
-
-<h2>Create a puppet master</h2>
-<p>The first thing we need is a puppet master. To do this we are going to use the lxc-create command to create a minimal Ubuntu Precise instance.</p>
-<div class="highlight"><pre><span class="c"># Create a fresh precise minimal install</span>
-lxc-create -n pdxpuppet-master -t ubuntu -- --release<span class="o">=</span>precise
-
-<span class="c"># Start your puppet master</span>
-lxc-start -n pdxpuppet-master -d
-
-<span class="c"># Determine the ip address</span>
-lxc-ls --fancy
-
-<span class="c"># Log in with the default username: ubuntu and password: ubuntu</span>
-ssh ubuntu@10.0.3.118
-</pre></div>
-
-
-<p>You may need to wait a few seconds for the container to start before the ip address will be displayed in the output of lxc-ls --fancy</p>
-<h2>Configure your puppet master</h2>
-<p>Now we need to configure our new instance to be a puppet master.</p>
-<div class="highlight"><pre><span class="c"># Become the root user</span>
-sudo -i
-
-<span class="c"># Install wget</span>
-apt-get install wget
-
-<span class="c"># Install the puppetlabs apt repository</span>
-wget http://apt.puppetlabs.com/puppetlabs-release-precise.deb
-dpkg -i puppetlabs-release-precise.deb
-apt-get update
-
-<span class="c"># Install the webrick puppetmaster</span>
-apt-get install puppet puppetmaster
-</pre></div>
-
-
-<p>The webrick puppetmaster is not recommended for production use. At this point you can choose to configure Apache and <a href="http://docs.puppetlabs.com/guides/passenger.html">Passenger</a> or an alternative.</p>
-<h2>Create a puppet client</h2>
-<p>Next we need a puppet client. The process will be almost identical to creating our puppet master.</p>
-<div class="highlight"><pre><span class="c"># Create a fresh precise minimal install</span>
-lxc-create -n pdxpuppet-client0 -t ubuntu -- --release<span class="o">=</span>precise
-
-<span class="c"># Start your puppet client0</span>
-lxc-start -n pdxpuppet-client0 -d
-
-<span class="c"># Determine the ip address</span>
-lxc-ls --fancy
-
-<span class="c"># Log in with the default username: ubuntu and password: ubuntu</span>
-ssh ubuntu@10.0.3.119
-</pre></div>
-
-
-<h2>Configure the client</h2>
-<p>Next we need to configure our client to know about the puppet master.</p>
-<p>Replace 10.0.3.118 with the ip of your puppetmaster</p>
-<div class="highlight"><pre><span class="c"># Become the root user</span>
-sudo -i
-
-<span class="c"># In this environment we don&#39;t have DNS so add the puppet master to /etc/hosts</span>
-<span class="nb">echo</span> <span class="s2">&quot;10.0.3.118 puppet puppet.lan&quot;</span> &gt;&gt; /etc/hosts
-
-<span class="c"># Install puppet</span>
-apt-get install puppet
-
-<span class="c"># Make puppet start on boot</span>
-/bin/sed -i <span class="s1">&#39;s/START\=no/START\=yes/&#39;</span> <span class="s1">&#39;/etc/default/puppet&#39;</span>
-</pre></div>
-
-
-<p>At this stage you can add any other useful tools or configuration. I usually install vim, git and ssh keys for root login from my laptop.</p>
-<p>After you're finished configuring the client turn it off.</p>
-<div class="highlight"><pre>lxc-stop -n pdxpuppet-client0
-</pre></div>
-
-
-<h2>Configure Puppet Autosigning on your master</h2>
-<p>This next step is for convenience. If you want to avoid signing certs in your development environment you can turn on auto signing.</p>
-<div class="highlight"><pre><span class="c"># On your puppetmaster</span>
-
-<span class="c"># Allow hosts with domain name lan</span>
-<span class="nb">echo</span> <span class="s2">&quot;*.lan&quot;</span> &gt;&gt; /etc/puppet/autosign.conf
-
-<span class="c"># Restart the puppet master</span>
-service puppetmaster restart
-</pre></div>
-
-
-<p>Auto signing is described in the docs <a href="http://docs.puppetlabs.com/guides/configuring.html#autosignconf">here</a></p>
-<p>There are security concerns with auto signing as described in the docs.</p>
-<div class="highlight"><pre><span class="s">&quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&quot;</span>
-</pre></div>
-
-
-<p>In this case my LXC environment is only on my laptop so I'm choosing to enable autosigining.</p>
-<h2>Add a node definition to your site.pp</h2>
-<p>Now we need to make a node definition for our client. By using a regex we can allow client 0 through client 9 to connect.</p>
-<p>On your puppet master add the following to /etc/puppet/manifests/site.pp</p>
-<div class="highlight"><pre><span class="k">node</span> <span class="o">/</span><span class="na">pdxpuppet</span><span class="o">-</span><span class="na">client</span><span class="p">[</span><span class="mi">0</span><span class="o">-</span><span class="mi">9</span><span class="p">]</span><span class="o">/</span> <span class="p">{</span><span class="c"></span>
-
-<span class="c">  # add code here</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h2>Clone more clients using client0</h2>
-<p>Now we X more clients. For now we will create 5 more.</p>
-<div class="highlight"><pre><span class="c"># LXC will make an exact copy and tweak the network configs</span>
-<span class="k">for </span>i in 1 2 3 4 5; <span class="k">do </span>lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client<span class="nv">$i</span> ; <span class="k">done</span>
-
-<span class="c"># Start your new machines</span>
-<span class="k">for </span>i in 1 2 3 4 5; <span class="k">do </span>lxc-start -n pdxpuppet-client<span class="nv">$i</span> ; <span class="k">done</span>
-</pre></div>
-
-
-<p>After you're clients boot they should automatically check in with the puppetmaster and request certs.</p>
-<h2>Summary</h2>
-<p>At this point you have successfully configured a puppet master and five puppet clients that are ready for testing out new code. If you need more clients you can clone pdxpuppet-client0 and generate as many as you need and they will automatically connect to the puppet master on boot.</p>
-<h2>Resources</h2>
-<ul>
-<li>
-<p><a href="http://en.wikipedia.org/wiki/LXC">http://en.wikipedia.org/wiki/LXC</a></p>
-</li>
-<li>
-<p><a href="http://lxc.sourceforge.net/">http://lxc.sourceforge.net/</a></p>
-</li>
-<li>
-<p><a href="https://help.ubuntu.com/12.04/serverguide/lxc.html">https://help.ubuntu.com/12.04/serverguide/lxc.html</a></p>
-</li>
-</ul>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+</footer><!-- /.post-info -->                <p>Creating a Puppet development environement with LXC</p>
+                <a class="readmore" href="http://blkperl.github.com/puppet-dev-with-lxc.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
             <li><article class="hentry">
                 <header>

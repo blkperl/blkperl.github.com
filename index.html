@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>zfs snapshot blkperl/dev/brain@Today</title>
+        <title>puppet resource blog author=blkperl</title>
         <link rel="stylesheet" href="http://blkperl.github.com/theme/css/main.css" />
-        <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="zfs snapshot blkperl/dev/brain@Today Atom Feed" />
+        <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="puppet resource blog author=blkperl Atom Feed" />
 
         <!--[if IE]>
             <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -13,10 +13,11 @@
 
 <body id="index" class="home">
         <header id="banner" class="body">
-                <h1><a href="http://blkperl.github.com/">zfs snapshot blkperl/dev/brain@Today </a></h1>
+                <h1><a href="http://blkperl.github.com/">puppet resource blog author=blkperl </a></h1>
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
+                    <li><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
                     <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
                     <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
@@ -25,7 +26,187 @@
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="http://blkperl.github.com/vagrant_solaris11.html">Using Vagrant with Solaris 11</a></h1>
+                    <h1 class="entry-title"><a href="http://blkperl.github.com/building_devops_dashboards_with_puppet.html">Building DevOps Dashboards with Puppet</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2014-04-17T00:13:00">
+                Thu 17 April 2014
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/puppet.html">puppet</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/puppet.html">puppet</a><a href="http://blkperl.github.com/tag/graphite.html">graphite</a><a href="http://blkperl.github.com/tag/leonardo.html">leonardo</a><a href="http://blkperl.github.com/tag/metrics.html">metrics</a></p>
+</footer><!-- /.post-info --><p>Graphite is awesome. The variety of metrics that you can put in it and the ability to build graphs to visualize specific things is an invaluable tool. However, most of the time I just want to be able to do a quick glance at a few key things on a server like CPU usage, memory usage, disk IO and network traffic. While its easy to bring these up individually in the default Graphite web UI it's a bit hard to flip through several different server metrics quickly. Not to mention getting them in the particular way you want to view them.</p>
+<p>At this point you want to build a DevOps dashboard and theres a ton of choices to choose from that goes way beyond the capabilities of the default Graphite web UI. You still end up with problem of building a dashboard for each host though and I have 200+ nodes. Sure I could write a script to do it but why repeat myself when Puppet could do this for me.</p>
+<p>I just needed to find a Graphite dashboard that I could easily model in Puppet via config files. Originally, I looked at Gdash by @ripienaar. It implements a simple DSL for Graphite that I could have been easily modeled in Puppet templates but I just happened to have seen the following tweet.</p>
+<blockquote class="twitter-tweet" lang="en"><p>New GDash inspired dashboard for Graphite <a href="http://t.co/8AJEZX1Jvl">http://t.co/8AJEZX1Jvl</a> from <a href="https://twitter.com/juliendehee">@juliendehee</a></p>&mdash; R.I.Pienaar (@ripienaar) <a href="https://twitter.com/ripienaar/statuses/423934247750365184">January 16, 2014</a></blockquote>
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>@juliendehee's Leonardo dashboard for Graphite is a simple Python Flask app that hits the Graphite render API to generate graphs. Instead of a DSL language like GDash it uses YAML files. At this point I was positive someone had already written a Puppet type for YAML so I went looking on the Puppet Forge and sure enough Reid had already done the work for me.</p>
+<p><a href="https://forge.puppetlabs.com/reidmv/yamlfile">https://forge.puppetlabs.com/reidmv/yamlfile</a></p>
+<p>A few hours of hacking later and I had a Puppet module for Leonardo. It works exactly like the Nagios host/service pattern using exported resources.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Your Puppet Masters need to be using PuppetDB.</li>
+<li>You need to install a recent version of Puppet (&gt;= 3.4.x) with Future parser enabled</li>
+</ul>
+<h2>Installation</h2>
+<p>To get started you need to add the leonardo module to your Puppet masters.</p>
+<div class="highlight"><pre><span class="n">puppet</span> <span class="n">module</span> <span class="n">install</span> <span class="n">pdxcat</span><span class="o">-</span><span class="n">leonardo</span>
+</pre></div>
+
+
+<p>Or you can download it directly from <a href="https://github.com/pdxcat/puppet-module-leonardo">GitHub</a>.</p>
+<h2>Leonardo server configuration</h2>
+<p>Next you will want install a Leonardo server on a webserver. Below you can see my <code>role::leonardo</code> puppet class. Include this class in your leonardo servers node definition. The leonardo class installs the packages needed for Leonardo, does some basic configuration and does a git clone of the source code from GitHub [1]. You can choose to omit the Leonardo class if you want to do it differently. Also since web server configuration is usually environment specific I'm going to omit it from this blog post but there is an example for setting it up with Apache in the <code>test/init.pp</code> file using the puppetlabs/apache module [2].</p>
+<p>The key lines to understand in this code snippet is the "mothership" operators also called exported resource collectors [3]. Lines 15-17 will collect all the leonardo resources that we are going to export on our target nodes. Then whenever the leonardo server checks in with Puppet it will ensure that all leonardo resources are created.</p>
+<div class="gist">
+    <script src='https://gist.github.com/10956900.js'></script>
+    <noscript>
+        <pre><code>class role::leonardo {
+
+  $template_dir = '/opt/leonardo/leonardo/graphs'
+
+  class { '::leonardo':
+    graphite_url => 'https://graphite.example.org',
+    template_dir => $template_dir,
+    install_dir  => '/opt/leonardo/leonardo',
+  }->
+  file { [$template_dir, "${template_dir}/servers"]:
+    ensure => directory,
+  }
+
+  # Environment tag can be removed when environment support is added to PuppetDB
+  File                <<| tag == "env_leonardo_${::environment}" |>> {}
+  Leonardo::Dashboard <<| tag == "env_leonardo_${::environment}" |>> {}
+  Leonardo::Graph     <<| tag == "env_leonardo_${::environment}" |>> {}
+}
+</code></pre>
+    </noscript>
+</div>
+<h2>Leonardo client configuration</h2>
+<p>For the target node configuration we need to exports resources. The following code snippet contains an example <code>role::leonardo::client</code>. Include the <code>role::leonardo::client</code> class on every node that you want a dashboard for.</p>
+<div class="gist">
+    <script src='https://gist.github.com/9826382.js'></script>
+    <noscript>
+        <pre><code>  $dashboard_root = '/var/www/leonardo/graphs/servers',
+  $collectd_name  = regsubst($::fqdn, '\.', '_', 'G'),
+  $dashboard_dir  = "${dashboard_root}/${::hostname}",
+
+  # Each dashboard needs a directory to hold the graph files
+  @@file { $dashboard_dir:
+    ensure => directory,
+    mode   => '0755',
+    tag    => "env_leonardo_${environment}",
+  }
+
+  # Each dashboard needs a a dash.yaml file
+  @@leonardo::dashboard { $::hostname:
+    target             => "${dashboard_dir}/dash.yaml",
+    name               => $::hostname,
+    description        => 'System Metrics',
+    include_properties => ['common.yaml'],
+    tag                => "env_${environment}",
+    require            => File[$dashboard_dir],
+  }
+</code></pre>
+    </noscript>
+</div>
+<p>In this particular example we are exporting a leonardo dashboard file, a directory for each server to hold the graphs, and a CPU graph. Check out the link at the bottom for our current list of graphs that we export on all nodes [4]. It should be a good starting point for getting the more common graphs up and running.</p>
+<h2>Graphs and Profit!</h2>
+<p>After running Puppet on both the target node and the Leonardo server you should see a servers dropdown menu. Upon selecting a server from the list you should see something similar to the dashboard below.</p>
+<p><img alt="Leonardo Dashboard" src="http://blkperl.github.com/images/leonardo_dashboard.png" /></p>
+<p>Once you're confident that you have the graphs you want defined in Puppet and tested on one node. Include the leonardo client class on all your nodes and watch as it creates a dashboard for each server as Puppet nodes checkin and Puppet runs on your Leonardo server.</p>
+<h2>Role Based Graphs</h2>
+<p>Now that we have a bunch of graphs that should be displayed for each node we can start adding ones for specific roles. Similar to the way you might export Nagios service checks depending on a Puppet class we can do the same with exporting leonardo dashboard resources.</p>
+<p>Let say we have an OpenVPN role. Normally, we would have have our server configuration, monitoring, and environment specific code defined in this file so adding leonardo resources is a natural extension.</p>
+<div class="gist">
+    <script src='https://gist.github.com/10961436.js'></script>
+    <noscript>
+        <pre><code>class role::vpnserver {
+
+  class { 'openvpn::server':
+     # environment specific parameters
+  }
+
+  class { 'collectd::plugin::openvpn':
+    # environment specific parameters
+  }
+
+  @@leonardo::graph { "${::hostname}-openvpn":
+    target     => "${dashboard_dir}/90-openvpn.graph",
+    parameters => { 'title'    => 'OpenVPN connected users',
+                    'vtitle'   => 'Users',
+                    'linemode' => 'connected' },
+    fields     => {
+                    'users'   => { 'data' => "sumSeries(collectd.${collectd_name}.openvpn*.*)",},
+                  },
+    tag       => "env_leonardo_${environment}",
+  }
+
+}
+</code></pre>
+    </noscript>
+</div>
+<p>This ability is incredibly powerful because all that metadata that Puppet knows about your infrastructure via puppet classes is now available to help you build automated dashboards. You can take it a step further by exporting Graphs to role based Dashboards. For example a custom dashboard for an applications with graphs from the webserver, load balancers and database servers.</p>
+<h2>Caveats</h2>
+<p>The current implement has a few issues that I'm going to gloss over in this post. Pull requests welcome to help fix them.</p>
+<ul>
+<li>Removing exported resources from PuppetDB is still a bit of a challenge</li>
+<li>Currently, old dashboards need to be manually removed as a purge parameter is not yet implemented</li>
+<li>Yamlfile can be really slow on initial runs with a large number of hosts</li>
+</ul>
+<h2>Summary</h2>
+<p>TL;DR I used unreleased Puppet features to make shiny dashboards with very little effort thanks to Graphite, Collectd and Puppet</p>
+<h2>Resources</h2>
+<ul>
+<li><a href="http://docs.puppetlabs.com/puppet/latest/reference/experiments_future.html">Puppet Future Parser</a></li>
+<li><a href="https://docs.puppetlabs.com/puppetdb/latest/">PuppetDB</a></li>
+</ul>
+<h2>References</h2>
+<ul>
+<li>[1] At the time of writing there are no packages for Leonardo available</li>
+<li>[2] <a href="https://github.com/pdxcat/puppet-module-leonardo/blob/master/tests/init.pp">Installing Leonardo with Apache example puppet manifest</a></li>
+<li>[3] <a href="http://docs.puppetlabs.com/puppet/latest/reference/lang_exported.html#collecting-exported-resources">Docs on Exported resource collectors</a></li>
+<li>[4] <a href="https://gist.github.com/blkperl/10958057">Full Leonardo client example</a> (Note: this very much a work in progress)</li>
+</ul>                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="http://blkperl.github.com/intro_to_leonardo.html" rel="bookmark"
+                           title="Permalink to Intro to Leonardo">Intro to Leonardo</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2014-03-27T22:42:00">
+                Thu 27 March 2014
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+        </address>
+<p>In <a href="http://blkperl.github.com/category/graphite.html">graphite</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/graphite.html">graphite</a><a href="http://blkperl.github.com/tag/leonardo.html">leonardo</a><a href="http://blkperl.github.com/tag/metrics.html">metrics</a></p>
+</footer><!-- /.post-info -->                <p>Intro to Leonardo</p>
+                <a class="readmore" href="http://blkperl.github.com/intro_to_leonardo.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="http://blkperl.github.com/vagrant_solaris11.html" rel="bookmark"
+                           title="Permalink to Using Vagrant with Solaris 11">Using Vagrant with Solaris 11</a></h1>
+                </header>
+
+                <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2014-02-19T23:23:00">
                 Wed 19 February 2014
@@ -36,180 +217,10 @@
         </address>
 <p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
 <p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a><a href="http://blkperl.github.com/tag/vagrant.html">vagrant</a></p>
-</footer><!-- /.post-info --><p>I finally got Solaris 11 vagrant boxes working! </p>
-<p>First you need to download a Solaris 11 iso from Oracle's website. Then use packer to build a solaris11 box file which is explained in Alan Chalmer's <a href="http://resilvered.blogspot.com/2014/02/solaris-vagrant-packer-and-base-box.html">blog</a>.</p>
-<p>Next we need a Vagrantfile, you can pull down mine and modify it for your needs. Then create an iso directory and place your solaris box image in it.</p>
-<div class="highlight"><pre>git clone https://gist.github.com/9108604.git
-mkdir iso
-cp /packer/build/directory/packer_solaris-11.1-amd64_virtualbox.box iso/
-</pre></div>
-
-
-<p>Our Vagrantfile looks like this. To mirror a production setup we are creating a secondary disk on the IDE controller to mirror rpool. Then we create a SATA controller and attach six 1G disks.</p>
-<div class="gist">
-    <script src='https://gist.github.com/9108604.js'></script>
-    <noscript>
-        <pre><code># -*- mode: ruby -*-
-# vi: set ft=ruby :
-
-# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
-VAGRANTFILE_API_VERSION = "2"
-
-Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-
-  diskroot = "/home/#{ENV['USER']}/VirtualBox\ VMs/"
-
-  config.vm.define "sunosfiler" do |v|
-    v.vm.box = "solaris-11.1"
-    v.vm.hostname = "sunosfiler"
-    v.vm.network :private_network, ip: "192.168.2.13"
-    v.vm.box_url = "iso/packer_solaris-11.1-amd64_virtualbox.box"
-    v.vm.provider :virtualbox do |vb|
-      # Create a sata controller for our disks
-      vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", 'sata']
-      # Create a second disk for the rpool mirror
-      diskname = "#{diskroot}/sunosfiler-ide1.vdi"
-      vb.customize ['createhd', '--filename', diskname, '--size', 8 * 1024]
-      vb.customize ['storageattach', :id, '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', diskname]
-    end
-    # Create six disks for a zpool
-    v.vm.provider :virtualbox do |vb|
-      ["1","2","3","4","5","6"].each do |disk|
-       diskname = "#{diskroot}/sunosfiler-sata#{disk}.vdi"
-       vb.customize ['createhd', '--filename', diskname, '--size', 1024]
-       vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk, '--device', 0, '--type', 'hdd', '--medium', diskname]
-      end
-    end
-  end
-end</code></pre>
-    </noscript>
-</div>
-<p>Now that we have everything we need we can start the vm with vagrant up.</p>
-<div class="highlight"><pre>vagrant up
-Bringing machine <span class="s1">&#39;sunosfiler&#39;</span> up with <span class="s1">&#39;virtualbox&#39;</span> provider...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Box <span class="s1">&#39;solaris-11.1&#39;</span> was not found. Fetching box from specified URL <span class="k">for</span>
-the provider <span class="s1">&#39;virtualbox&#39;</span>. Note that <span class="k">if </span>the URL does not have
-a box <span class="k">for </span>this provider, you should interrupt Vagrant now and add
-the box yourself. Otherwise Vagrant will attempt to download the
-full box prior to discovering this error.
-Downloading or copying the box...
-Extracting box...te: 25.0M/s, Estimated <span class="nb">time </span>remaining: 0:00:01<span class="o">)</span>
-Successfully added box <span class="s1">&#39;solaris-11.1&#39;</span> with provider <span class="s1">&#39;virtualbox&#39;</span>!
-<span class="o">[</span>sunosfiler<span class="o">]</span> Importing base box <span class="s1">&#39;solaris-11.1&#39;</span>...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Matching MAC address <span class="k">for </span>NAT networking...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Setting the name of the VM...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Setting the name of the VM...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Clearing any previously <span class="nb">set </span>forwarded ports...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Creating shared folders metadata...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Clearing any previously <span class="nb">set </span>network interfaces...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Preparing network interfaces based on configuration...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Forwarding ports...
-<span class="o">[</span>sunosfiler<span class="o">]</span> -- <span class="nv">22</span> <span class="o">=</span>&gt; 2222 <span class="o">(</span>adapter 1<span class="o">)</span>
-<span class="o">[</span>sunosfiler<span class="o">]</span> Running any VM customizations...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Booting VM...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Waiting <span class="k">for </span>VM to boot. This can take a few minutes.
-<span class="o">[</span>sunosfiler<span class="o">]</span> VM booted and ready <span class="k">for </span>use!
-<span class="o">[</span>sunosfiler<span class="o">]</span> Setting hostname...
-</pre></div>
-
-
-<p>Now we login and become the root user.</p>
-<div class="highlight"><pre>vagrant ssh
-sudo -i
-</pre></div>
-
-
-<p>Next let's take a look at the disks that we attached. You can use the format command to list the availible disks.</p>
-<div class="highlight"><pre>format
-Searching <span class="k">for </span>disks...done
-
-
-AVAILABLE DISK SELECTIONS:
-       0. c7d0 &lt;VBOX HAR-bafb5063-0735aa9-0001-8.00GB&gt;
-          /pci@0,0/pci-ide@1,1/ide@0/cmdk@0,0
-       1. c8d0 &lt;VBOX HAR-196ca772-16ab95f-0001 cyl 4093 alt 2 hd 128 sec 32&gt;
-          /pci@0,0/pci-ide@1,1/ide@1/cmdk@0,0
-       2. c9t1d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
-          /pci@0,0/pci8086,2829@d/disk@1,0
-       3. c9t2d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
-          /pci@0,0/pci8086,2829@d/disk@2,0
-       4. c9t3d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
-          /pci@0,0/pci8086,2829@d/disk@3,0
-       5. c9t4d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
-          /pci@0,0/pci8086,2829@d/disk@4,0
-       6. c9t5d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
-          /pci@0,0/pci8086,2829@d/disk@5,0
-       7. c9t6d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
-          /pci@0,0/pci8086,2829@d/disk@6,0
-Specify disk <span class="o">(</span>enter its number<span class="o">)</span>:
-</pre></div>
-
-
-<p>You can see that c7d0 and c8d0 are our 8G system disks attached to the IDE controller. Let's attach c8d0 to the rpool and make a mirror.</p>
-<div class="highlight"><pre>zpool attach rpool c7d0 c8d0
-Make sure to <span class="nb">wait </span><span class="k">until </span>resilver is <span class="k">done </span>before rebooting.
-</pre></div>
-
-
-<p>If we examine the pool now, we can see it resilvering.</p>
-<div class="highlight"><pre><span class="nx">zpool</span> <span class="nx">status</span> <span class="nx">rpool</span>
-  <span class="nx">pool</span><span class="o">:</span> <span class="nx">rpool</span>
- <span class="nx">state</span><span class="o">:</span> <span class="nx">DEGRADED</span>
-<span class="nx">status</span><span class="o">:</span> <span class="nx">One</span> <span class="nx">or</span> <span class="nx">more</span> <span class="nx">devices</span> <span class="nx">is</span> <span class="nx">currently</span> <span class="nx">being</span> <span class="nx">resilvered</span><span class="p">.</span>  <span class="nx">The</span> <span class="nx">pool</span> <span class="nx">will</span>
-        <span class="k">continue</span> <span class="nx">to</span> <span class="kd">function</span> <span class="k">in</span> <span class="nx">a</span> <span class="nx">degraded</span> <span class="nx">state</span><span class="p">.</span>
-<span class="nx">action</span><span class="o">:</span> <span class="nx">Wait</span> <span class="k">for</span> <span class="nx">the</span> <span class="nx">resilver</span> <span class="nx">to</span> <span class="nx">complete</span><span class="p">.</span>
-        <span class="nx">Run</span> <span class="s1">&#39;zpool status -v&#39;</span> <span class="nx">to</span> <span class="nx">see</span> <span class="nx">device</span> <span class="nx">specific</span> <span class="nx">details</span><span class="p">.</span>
-  <span class="nx">scan</span><span class="o">:</span> <span class="nx">resilver</span> <span class="k">in</span> <span class="nx">progress</span> <span class="nx">since</span> <span class="nx">Thu</span> <span class="nx">Feb</span> <span class="mi">20</span> <span class="mi">19</span><span class="o">:</span><span class="mi">14</span><span class="o">:</span><span class="mi">00</span> <span class="mi">2014</span>
-    <span class="mi">809</span><span class="nx">M</span> <span class="nx">scanned</span> <span class="nx">out</span> <span class="nx">of</span> <span class="mf">3.69</span><span class="nx">G</span> <span class="nx">at</span> <span class="mf">38.5</span><span class="nx">M</span><span class="o">/</span><span class="nx">s</span><span class="p">,</span> <span class="mi">0</span><span class="nx">h1m</span> <span class="nx">to</span> <span class="nx">go</span>
-    <span class="mi">777</span><span class="nx">M</span> <span class="nx">resilvered</span><span class="p">,</span> <span class="mf">21.40</span><span class="o">%</span> <span class="nx">done</span>
-<span class="nx">config</span><span class="o">:</span>
-
-        <span class="nx">NAME</span>        <span class="nx">STATE</span>     <span class="nx">READ</span> <span class="nx">WRITE</span> <span class="nx">CKSUM</span>
-        <span class="nx">rpool</span>       <span class="nx">DEGRADED</span>     <span class="mi">0</span>     <span class="mi">0</span>     <span class="mi">0</span>
-          <span class="nx">mirror</span><span class="o">-</span><span class="mi">0</span>  <span class="nx">DEGRADED</span>     <span class="mi">0</span>     <span class="mi">0</span>     <span class="mi">0</span>
-            <span class="nx">c7d0</span>    <span class="nx">ONLINE</span>       <span class="mi">0</span>     <span class="mi">0</span>     <span class="mi">0</span>
-            <span class="nx">c8d0</span>    <span class="nx">DEGRADED</span>     <span class="mi">0</span>     <span class="mi">0</span>     <span class="mi">0</span>  <span class="p">(</span><span class="nx">resilvering</span><span class="p">)</span>
-
-<span class="nx">errors</span><span class="o">:</span> <span class="nx">No</span> <span class="nx">known</span> <span class="nx">data</span> <span class="nx">errors</span>
-</pre></div>
-
-
-<p>After a few minutes it should be fully online. Then we need to install grub on the new disk</p>
-<div class="highlight"><pre>bootadm install-bootloader -P rpool
-</pre></div>
-
-
-<p>Now that our root pool is setup we can move on to our storage pool. I choose to mirror every disk but you can choose whatever raid configuration you prefer.</p>
-<div class="highlight"><pre>zpool create stark mirror c9t1d0 c9t2d0 mirror c9t3d0 c9t4d0 mirror c9t5d0 c9t6d0
-zpool status stark
-  pool: stark
- state: ONLINE
-  scan: none requested
-config:
-
-        NAME        STATE     READ WRITE CKSUM
-        stark       ONLINE       0     0     0
-          mirror-0  ONLINE       0     0     0
-            c9t1d0  ONLINE       0     0     0
-            c9t2d0  ONLINE       0     0     0
-          mirror-1  ONLINE       0     0     0
-            c9t3d0  ONLINE       0     0     0
-            c9t4d0  ONLINE       0     0     0
-          mirror-2  ONLINE       0     0     0
-            c9t5d0  ONLINE       0     0     0
-            c9t6d0  ONLINE       0     0     0
-
-errors: No known data errors
-</pre></div>
-
-
-<p>At this point our storage is configured and we can move on to creating filesystems, setting up services, or running tests.</p>
-<p>Happy Hacking!</p>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+</footer><!-- /.post-info -->                <p>Using Vagrant with Solaris 11</p>
+                <a class="readmore" href="http://blkperl.github.com/vagrant_solaris11.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
             <li><article class="hentry">
                 <header>

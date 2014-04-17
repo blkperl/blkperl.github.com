@@ -1,5 +1,141 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>zfs snapshot blkperl/dev/brain@Today</title><link href="http://blkperl.github.com/" rel="alternate"></link><link href="http://blkperl.github.com/feeds/all.atom.xml" rel="self"></link><id>http://blkperl.github.com/</id><updated>2014-02-19T23:23:00-08:00</updated><entry><title>Using Vagrant with Solaris 11</title><link href="http://blkperl.github.com/vagrant_solaris11.html" rel="alternate"></link><updated>2014-02-19T23:23:00-08:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-02-19:vagrant_solaris11.html</id><summary type="html">&lt;p&gt;I finally got Solaris 11 vagrant boxes working! &lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>puppet resource blog author=blkperl</title><link href="http://blkperl.github.com/" rel="alternate"></link><link href="http://blkperl.github.com/feeds/all.atom.xml" rel="self"></link><id>http://blkperl.github.com/</id><updated>2014-04-17T00:13:00-07:00</updated><entry><title>Building DevOps Dashboards with Puppet</title><link href="http://blkperl.github.com/building_devops_dashboards_with_puppet.html" rel="alternate"></link><updated>2014-04-17T00:13:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-04-17:building_devops_dashboards_with_puppet.html</id><summary type="html">&lt;p&gt;Graphite is awesome. The variety of metrics that you can put in it and the ability to build graphs to visualize specific things is an invaluable tool. However, most of the time I just want to be able to do a quick glance at a few key things on a server like CPU usage, memory usage, disk IO and network traffic. While its easy to bring these up individually in the default Graphite web UI it's a bit hard to flip through several different server metrics quickly. Not to mention getting them in the particular way you want to view them.&lt;/p&gt;
+&lt;p&gt;At this point you want to build a DevOps dashboard and theres a ton of choices to choose from that goes way beyond the capabilities of the default Graphite web UI. You still end up with problem of building a dashboard for each host though and I have 200+ nodes. Sure I could write a script to do it but why repeat myself when Puppet could do this for me.&lt;/p&gt;
+&lt;p&gt;I just needed to find a Graphite dashboard that I could easily model in Puppet via config files. Originally, I looked at Gdash by @ripienaar. It implements a simple DSL for Graphite that I could have been easily modeled in Puppet templates but I just happened to have seen the following tweet.&lt;/p&gt;
+&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;p&gt;New GDash inspired dashboard for Graphite &lt;a href="http://t.co/8AJEZX1Jvl"&gt;http://t.co/8AJEZX1Jvl&lt;/a&gt; from &lt;a href="https://twitter.com/juliendehee"&gt;@juliendehee&lt;/a&gt;&lt;/p&gt;&amp;mdash; R.I.Pienaar (@ripienaar) &lt;a href="https://twitter.com/ripienaar/statuses/423934247750365184"&gt;January 16, 2014&lt;/a&gt;&lt;/blockquote&gt;
+
+&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
+
+&lt;p&gt;@juliendehee's Leonardo dashboard for Graphite is a simple Python Flask app that hits the Graphite render API to generate graphs. Instead of a DSL language like GDash it uses YAML files. At this point I was positive someone had already written a Puppet type for YAML so I went looking on the Puppet Forge and sure enough Reid had already done the work for me.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://forge.puppetlabs.com/reidmv/yamlfile"&gt;https://forge.puppetlabs.com/reidmv/yamlfile&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;A few hours of hacking later and I had a Puppet module for Leonardo. It works exactly like the Nagios host/service pattern using exported resources.&lt;/p&gt;
+&lt;h2&gt;Prerequisites&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Your Puppet Masters need to be using PuppetDB.&lt;/li&gt;
+&lt;li&gt;You need to install a recent version of Puppet (&amp;gt;= 3.4.x) with Future parser enabled&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Installation&lt;/h2&gt;
+&lt;p&gt;To get started you need to add the leonardo module to your Puppet masters.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;module&lt;/span&gt; &lt;span class="n"&gt;install&lt;/span&gt; &lt;span class="n"&gt;pdxcat&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;leonardo&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Or you can download it directly from &lt;a href="https://github.com/pdxcat/puppet-module-leonardo"&gt;GitHub&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Leonardo server configuration&lt;/h2&gt;
+&lt;p&gt;Next you will want install a Leonardo server on a webserver. Below you can see my &lt;code&gt;role::leonardo&lt;/code&gt; puppet class. Include this class in your leonardo servers node definition. The leonardo class installs the packages needed for Leonardo, does some basic configuration and does a git clone of the source code from GitHub [1]. You can choose to omit the Leonardo class if you want to do it differently. Also since web server configuration is usually environment specific I'm going to omit it from this blog post but there is an example for setting it up with Apache in the &lt;code&gt;test/init.pp&lt;/code&gt; file using the puppetlabs/apache module [2].&lt;/p&gt;
+&lt;p&gt;The key lines to understand in this code snippet is the "mothership" operators also called exported resource collectors [3]. Lines 15-17 will collect all the leonardo resources that we are going to export on our target nodes. Then whenever the leonardo server checks in with Puppet it will ensure that all leonardo resources are created.&lt;/p&gt;
+&lt;div class="gist"&gt;
+    &lt;script src='https://gist.github.com/10956900.js'&gt;&lt;/script&gt;
+    &lt;noscript&gt;
+        &lt;pre&gt;&lt;code&gt;class role::leonardo {
+
+  $template_dir = '/opt/leonardo/leonardo/graphs'
+
+  class { '::leonardo':
+    graphite_url =&gt; 'https://graphite.example.org',
+    template_dir =&gt; $template_dir,
+    install_dir  =&gt; '/opt/leonardo/leonardo',
+  }-&gt;
+  file { [$template_dir, "${template_dir}/servers"]:
+    ensure =&gt; directory,
+  }
+
+  # Environment tag can be removed when environment support is added to PuppetDB
+  File                &lt;&lt;| tag == "env_leonardo_${::environment}" |&gt;&gt; {}
+  Leonardo::Dashboard &lt;&lt;| tag == "env_leonardo_${::environment}" |&gt;&gt; {}
+  Leonardo::Graph     &lt;&lt;| tag == "env_leonardo_${::environment}" |&gt;&gt; {}
+}
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/noscript&gt;
+&lt;/div&gt;
+&lt;h2&gt;Leonardo client configuration&lt;/h2&gt;
+&lt;p&gt;For the target node configuration we need to exports resources. The following code snippet contains an example &lt;code&gt;role::leonardo::client&lt;/code&gt;. Include the &lt;code&gt;role::leonardo::client&lt;/code&gt; class on every node that you want a dashboard for.&lt;/p&gt;
+&lt;div class="gist"&gt;
+    &lt;script src='https://gist.github.com/9826382.js'&gt;&lt;/script&gt;
+    &lt;noscript&gt;
+        &lt;pre&gt;&lt;code&gt;  $dashboard_root = '/var/www/leonardo/graphs/servers',
+  $collectd_name  = regsubst($::fqdn, '\.', '_', 'G'),
+  $dashboard_dir  = "${dashboard_root}/${::hostname}",
+
+  # Each dashboard needs a directory to hold the graph files
+  @@file { $dashboard_dir:
+    ensure =&gt; directory,
+    mode   =&gt; '0755',
+    tag    =&gt; "env_leonardo_${environment}",
+  }
+
+  # Each dashboard needs a a dash.yaml file
+  @@leonardo::dashboard { $::hostname:
+    target             =&gt; "${dashboard_dir}/dash.yaml",
+    name               =&gt; $::hostname,
+    description        =&gt; 'System Metrics',
+    include_properties =&gt; ['common.yaml'],
+    tag                =&gt; "env_${environment}",
+    require            =&gt; File[$dashboard_dir],
+  }
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/noscript&gt;
+&lt;/div&gt;
+&lt;p&gt;In this particular example we are exporting a leonardo dashboard file, a directory for each server to hold the graphs, and a CPU graph. Check out the link at the bottom for our current list of graphs that we export on all nodes [4]. It should be a good starting point for getting the more common graphs up and running.&lt;/p&gt;
+&lt;h2&gt;Graphs and Profit!&lt;/h2&gt;
+&lt;p&gt;After running Puppet on both the target node and the Leonardo server you should see a servers dropdown menu. Upon selecting a server from the list you should see something similar to the dashboard below.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Leonardo Dashboard" src="http://blkperl.github.com/images/leonardo_dashboard.png" /&gt;&lt;/p&gt;
+&lt;p&gt;Once you're confident that you have the graphs you want defined in Puppet and tested on one node. Include the leonardo client class on all your nodes and watch as it creates a dashboard for each server as Puppet nodes checkin and Puppet runs on your Leonardo server.&lt;/p&gt;
+&lt;h2&gt;Role Based Graphs&lt;/h2&gt;
+&lt;p&gt;Now that we have a bunch of graphs that should be displayed for each node we can start adding ones for specific roles. Similar to the way you might export Nagios service checks depending on a Puppet class we can do the same with exporting leonardo dashboard resources.&lt;/p&gt;
+&lt;p&gt;Let say we have an OpenVPN role. Normally, we would have have our server configuration, monitoring, and environment specific code defined in this file so adding leonardo resources is a natural extension.&lt;/p&gt;
+&lt;div class="gist"&gt;
+    &lt;script src='https://gist.github.com/10961436.js'&gt;&lt;/script&gt;
+    &lt;noscript&gt;
+        &lt;pre&gt;&lt;code&gt;class role::vpnserver {
+
+  class { 'openvpn::server':
+     # environment specific parameters
+  }
+
+  class { 'collectd::plugin::openvpn':
+    # environment specific parameters
+  }
+
+  @@leonardo::graph { "${::hostname}-openvpn":
+    target     =&gt; "${dashboard_dir}/90-openvpn.graph",
+    parameters =&gt; { 'title'    =&gt; 'OpenVPN connected users',
+                    'vtitle'   =&gt; 'Users',
+                    'linemode' =&gt; 'connected' },
+    fields     =&gt; {
+                    'users'   =&gt; { 'data' =&gt; "sumSeries(collectd.${collectd_name}.openvpn*.*)",},
+                  },
+    tag       =&gt; "env_leonardo_${environment}",
+  }
+
+}
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/noscript&gt;
+&lt;/div&gt;
+&lt;p&gt;This ability is incredibly powerful because all that metadata that Puppet knows about your infrastructure via puppet classes is now available to help you build automated dashboards. You can take it a step further by exporting Graphs to role based Dashboards. For example a custom dashboard for an applications with graphs from the webserver, load balancers and database servers.&lt;/p&gt;
+&lt;h2&gt;Caveats&lt;/h2&gt;
+&lt;p&gt;The current implement has a few issues that I'm going to gloss over in this post. Pull requests welcome to help fix them.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Removing exported resources from PuppetDB is still a bit of a challenge&lt;/li&gt;
+&lt;li&gt;Currently, old dashboards need to be manually removed as a purge parameter is not yet implemented&lt;/li&gt;
+&lt;li&gt;Yamlfile can be really slow on initial runs with a large number of hosts&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;TL;DR I used unreleased Puppet features to make shiny dashboards with very little effort thanks to Graphite, Collectd and Puppet&lt;/p&gt;
+&lt;h2&gt;Resources&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="http://docs.puppetlabs.com/puppet/latest/reference/experiments_future.html"&gt;Puppet Future Parser&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://docs.puppetlabs.com/puppetdb/latest/"&gt;PuppetDB&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;References&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;[1] At the time of writing there are no packages for Leonardo available&lt;/li&gt;
+&lt;li&gt;[2] &lt;a href="https://github.com/pdxcat/puppet-module-leonardo/blob/master/tests/init.pp"&gt;Installing Leonardo with Apache example puppet manifest&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;[3] &lt;a href="http://docs.puppetlabs.com/puppet/latest/reference/lang_exported.html#collecting-exported-resources"&gt;Docs on Exported resource collectors&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;[4] &lt;a href="https://gist.github.com/blkperl/10958057"&gt;Full Leonardo client example&lt;/a&gt; (Note: this very much a work in progress)&lt;/li&gt;
+&lt;/ul&gt;</summary><category term="puppet"></category><category term="graphite"></category><category term="leonardo"></category><category term="metrics"></category></entry><entry><title>Intro to Leonardo</title><link href="http://blkperl.github.com/intro_to_leonardo.html" rel="alternate"></link><updated>2014-03-27T22:42:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-03-27:intro_to_leonardo.html</id><summary type="html">&lt;p&gt;&lt;a href="https://github.com/PrFalken/leonardo"&gt;Leonardo&lt;/a&gt; is a Graphite dasboard written by Julien Dehee (&lt;a href="https://github.com/PrFalken"&gt;PrFalken&lt;/a&gt;). It's based on and closely resembles &lt;a href="https://github.com/ripienaar/gdash"&gt;Gdash&lt;/a&gt;. Both Gdash and Leonardo allow the user to specify the construction of graphs through configuration files. Gdash implents its own dsl and Leonardo uses yaml files. This allows you to easily script and automate the construction of dashboards with bash or your favorite configuration management software.&lt;/p&gt;
+&lt;p&gt;I choose to go with Leonardo over Gdash mostly due to lazyness. I was already familar with yaml and it seemed easier to template in Puppet than Gdash's dsl. Additionally, Leonardo shipped with better documentation and &lt;a href="https://github.com/PrFalken/leonardo/issues/2"&gt;when I asked for better examples&lt;/a&gt; PrFalken responded within a few hours with examples and suggestions on how to debug my graphs not rendering.&lt;/p&gt;
+&lt;p&gt;Installing Leonardo is pretty easy. The installation instructions are availible on the &lt;a href="https://github.com/PrFalken/leonardo/blob/master/README.md"&gt;README&lt;/a&gt;. For Puppet users you can use the Puppet module I wrote for it.&lt;/p&gt;</summary><category term="graphite"></category><category term="leonardo"></category><category term="metrics"></category></entry><entry><title>Using Vagrant with Solaris 11</title><link href="http://blkperl.github.com/vagrant_solaris11.html" rel="alternate"></link><updated>2014-02-19T23:23:00-08:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-02-19:vagrant_solaris11.html</id><summary type="html">&lt;p&gt;I finally got Solaris 11 vagrant boxes working! &lt;/p&gt;
 &lt;p&gt;First you need to download a Solaris 11 iso from Oracle's website. Then use packer to build a solaris11 box file which is explained in Alan Chalmer's &lt;a href="http://resilvered.blogspot.com/2014/02/solaris-vagrant-packer-and-base-box.html"&gt;blog&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Next we need a Vagrantfile, you can pull down mine and modify it for your needs. Then create an iso directory and place your solaris box image in it.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;git clone https://gist.github.com/9108604.git

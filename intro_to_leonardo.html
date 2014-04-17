@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>Removing a patch from Solaris 10</title>
+        <title>Intro to Leonardo</title>
         <link rel="stylesheet" href="http://blkperl.github.com/theme/css/main.css" />
         <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="puppet resource blog author=blkperl Atom Feed" />
 
@@ -17,103 +17,35 @@
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
-                    <li><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
+                    <li class="active"><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
                     <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
-                    <li class="active"><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
+                    <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
 <section id="content" class="body">
   <article>
     <header>
       <h1 class="entry-title">
-        <a href="http://blkperl.github.com/remove_solaris_patch.html" rel="bookmark"
-           title="Permalink to Removing a patch from Solaris 10">Removing a patch from Solaris 10</a></h1>
+        <a href="http://blkperl.github.com/intro_to_leonardo.html" rel="bookmark"
+           title="Permalink to Intro to Leonardo">Intro to Leonardo</a></h1>
 <a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
     </header>
 
     <div class="entry-content">
 <footer class="post-info">
-        <abbr class="published" title="2013-03-27T12:00:00">
-                Wed 27 March 2013
+        <abbr class="published" title="2014-03-27T22:42:00">
+                Thu 27 March 2014
         </abbr>
 
         <address class="vcard author">
                 By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a></p>
-</footer><!-- /.post-info -->      <p>In this example we removed a custom IDR patch provided by Oracle.</p>
-<h2>Check to see if the patch is installed</h2>
-<div class="highlight"><pre>caerbannog# showrev -p | grep 148363
-Patch: IDR148363-26 Obsoletes:  Requires: 147441-26 Incompatibles: 147441-27 Packages: SUNWnfsckr, SUNWzfskr, SUNWzfsu, SUNWzfsr
-</pre></div>
-
-
-<h2>Remove the patch with patchrm</h2>
-<div class="highlight"><pre>caerbannog# patchrm IDR148363-26
-Validating patches...
-
-Loading patches installed on the system...
-
-Done!
-
-Checking patches that you specified <span class="k">for </span>removal.
-
-Done!
-
-Approved patches will be removed in this order:
-
-IDR148363-26
-Preparing checklist <span class="k">for </span>non-global zone check...
-
-Checking non-global zones...
-
-
-This patch passes non-global zone check.
-IDR148363-26
-
-
-Summary <span class="k">for </span>zones:
-
-Zone crisco
-
-Rejected patches:
-None.
-tches that passed the dependency check:
-None.
-
-
-Removing patches from non-global zones
-
-Removing patches from zone crisco
-Removing patch IDR148363-26...
-Done!
-
-Checking installed patches...
-
-Backing out patch IDR148363-26...
-
-Patch IDR148363-26 has been backed out.
-
-
-Removing patches from zone nt4
-
-Removing patches from zone sfw
-
-Removing patches from global zone
-Removing patch IDR148363-26...
-
-Checking installed patches...
-
-Executing prebackout script...
-Backing out patch IDR148363-26...
-
-Executing postbackout script...
-Patch IDR148363-26 has been backed out.
-
-Done!
-</pre></div>
+<p>In <a href="http://blkperl.github.com/category/graphite.html">graphite</a>. </p>
+<p>tags: <a href="http://blkperl.github.com/tag/graphite.html">graphite</a><a href="http://blkperl.github.com/tag/leonardo.html">leonardo</a><a href="http://blkperl.github.com/tag/metrics.html">metrics</a></p>
+</footer><!-- /.post-info -->      <p><a href="https://github.com/PrFalken/leonardo">Leonardo</a> is a Graphite dasboard written by Julien Dehee (<a href="https://github.com/PrFalken">PrFalken</a>). It's based on and closely resembles <a href="https://github.com/ripienaar/gdash">Gdash</a>. Both Gdash and Leonardo allow the user to specify the construction of graphs through configuration files. Gdash implents its own dsl and Leonardo uses yaml files. This allows you to easily script and automate the construction of dashboards with bash or your favorite configuration management software.</p>
+<p>I choose to go with Leonardo over Gdash mostly due to lazyness. I was already familar with yaml and it seemed easier to template in Puppet than Gdash's dsl. Additionally, Leonardo shipped with better documentation and <a href="https://github.com/PrFalken/leonardo/issues/2">when I asked for better examples</a> PrFalken responded within a few hours with examples and suggestions on how to debug my graphs not rendering.</p>
+<p>Installing Leonardo is pretty easy. The installation instructions are availible on the <a href="https://github.com/PrFalken/leonardo/blob/master/README.md">README</a>. For Puppet users you can use the Puppet module I wrote for it.</p>
     </div><!-- /.entry-content -->
 
   </article>
