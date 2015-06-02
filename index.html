@@ -3,8 +3,8 @@
 <head>
         <meta charset="utf-8" />
         <title>puppet resource blog author=blkperl</title>
-        <link rel="stylesheet" href="http://blkperl.github.com/theme/css/main.css" />
-        <link href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="puppet resource blog author=blkperl Atom Feed" />
+        <link rel="stylesheet" href="https://blkperl.github.io/theme/css/main.css" />
+        <link href="https://blkperl.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="puppet resource blog author=blkperl Atom Feed" />
 
         <!--[if IE]>
             <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -13,29 +13,29 @@
 
 <body id="index" class="home">
         <header id="banner" class="body">
-                <h1><a href="http://blkperl.github.com/">puppet resource blog author=blkperl </a></h1>
+                <h1><a href="https://blkperl.github.io/">puppet resource blog author=blkperl </a></h1>
                 <nav><ul>
-                    <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
-                    <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
-                    <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
-                    <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
-                    <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
+                    <li><a href="https://blkperl.github.io/category/centos.html">centos</a></li>
+                    <li><a href="https://blkperl.github.io/category/ganeti.html">ganeti</a></li>
+                    <li><a href="https://blkperl.github.io/category/lxc.html">lxc</a></li>
+                    <li><a href="https://blkperl.github.io/category/puppet.html">puppet</a></li>
+                    <li><a href="https://blkperl.github.io/category/solaris.html">solaris</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="http://blkperl.github.com/building_devops_dashboards_with_puppet.html">Building DevOps Dashboards with Puppet</a></h1>
+                    <h1 class="entry-title"><a href="https://blkperl.github.io/building_devops_dashboards_with_puppet.html">Building DevOps Dashboards with Puppet</a></h1>
 <footer class="post-info">
         <abbr class="published" title="2014-04-17T00:13:00-07:00">
                 Published: Thu 17 April 2014
         </abbr>
 
         <address class="vcard author">
-                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="https://blkperl.github.io/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/puppet.html">puppet</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/puppet.html">puppet</a> <a href="http://blkperl.github.com/tag/graphite.html">graphite</a> <a href="http://blkperl.github.com/tag/leonardo.html">leonardo</a> <a href="http://blkperl.github.com/tag/metrics.html">metrics</a> </p>
+<p>In <a href="https://blkperl.github.io/category/puppet.html">puppet</a>. </p>
+<p>tags: <a href="https://blkperl.github.io/tag/puppet.html">puppet</a> <a href="https://blkperl.github.io/tag/graphite.html">graphite</a> <a href="https://blkperl.github.io/tag/leonardo.html">leonardo</a> <a href="https://blkperl.github.io/tag/metrics.html">metrics</a> </p>
 </footer><!-- /.post-info --><p>Graphite is awesome. The variety of metrics that you can put in it and the ability to build graphs to visualize specific things is an invaluable tool. However, most of the time, I just want to be able to do a quick glance at a few key things on a server like CPU usage, memory usage, disk I/O, and network traffic. While it's easy to bring these graphs up individually, in the default Graphite web UI, it's a bit harder to flip through several different server metrics quickly. Not to mention getting them in the particular way you want to view them.</p>
 <p>At this point, you want to build a DevOps dashboard and there's a ton of choices to choose from that goes way beyond the capabilities of the default Graphite web UI. Although, you still end up with the problem of building a dashboard for each host and I have 200+ nodes. Sure, I could write a script to do it but why repeat myself when Puppet could do this for me.</p>
 <p>I just needed to find a Graphite dashboard that I could easily model in Puppet via config files. Originally, I looked at Gdash by @ripienaar. It implements a simple DSL for Graphite that I could have easily modeled in Puppet templates but I just so happened upon the following tweet.</p>
@@ -134,7 +134,7 @@
 <p>In this particular example, we are exporting a leonardo dashboard file, a directory for each server to hold the graphs, and a CPU graph. Check out the link at the bottom for our current list of graphs that we export on all nodes [4]. It should be a good starting point for getting the more common graphs up and running.</p>
 <h2>Graphs and Profit!</h2>
 <p>After running Puppet on both the target node and the Leonardo server, you should see a servers dropdown menu. Upon selecting a server from the list you should see something similar to the dashboard below.</p>
-<p><img alt="Leonardo Dashboard" src="http://blkperl.github.com/images/leonardo_dashboard.png" /></p>
+<p><img alt="Leonardo Dashboard" src="https://blkperl.github.io/images/leonardo_dashboard.png" /></p>
 <p>Once you're confident that you have the graphs you want defined in Puppet and have tested on one node. Include the leonardo client class on all your nodes and watch as it creates a dashboard for each server as Puppet nodes start to check in and Puppet runs on your Leonardo server.</p>
 <h2>Role Based Graphs</h2>
 <p>Now that we have a bunch of graphs that should be displayed for each node we can start adding ones for specific roles. Similar to the way you might export Nagios service checks depending on a Puppet class we can do the same with exporting leonardo dashboard resources.</p>
@@ -197,7 +197,7 @@
 
             <li><article class="hentry">
                 <header>
-                    <h1><a href="http://blkperl.github.com/vagrant_solaris11.html" rel="bookmark"
+                    <h1><a href="https://blkperl.github.io/vagrant_solaris11.html" rel="bookmark"
                            title="Permalink to Using Vagrant with Solaris 11">Using Vagrant with Solaris 11</a></h1>
                 </header>
 
@@ -208,18 +208,18 @@
         </abbr>
 
         <address class="vcard author">
-                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="https://blkperl.github.io/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a> <a href="http://blkperl.github.com/tag/vagrant.html">vagrant</a> </p>
+<p>In <a href="https://blkperl.github.io/category/solaris.html">solaris</a>. </p>
+<p>tags: <a href="https://blkperl.github.io/tag/solaris.html">solaris</a> <a href="https://blkperl.github.io/tag/vagrant.html">vagrant</a> </p>
 </footer><!-- /.post-info -->                <p>Using Vagrant with Solaris 11</p>
-                <a class="readmore" href="http://blkperl.github.com/vagrant_solaris11.html">read more</a>
+                <a class="readmore" href="https://blkperl.github.io/vagrant_solaris11.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
 
             <li><article class="hentry">
                 <header>
-                    <h1><a href="http://blkperl.github.com/puppet-dev-with-lxc.html" rel="bookmark"
+                    <h1><a href="https://blkperl.github.io/puppet-dev-with-lxc.html" rel="bookmark"
                            title="Permalink to Creating a Puppet development environment with LXC">Creating a Puppet development environment with LXC</a></h1>
                 </header>
 
@@ -230,18 +230,18 @@
         </abbr>
 
         <address class="vcard author">
-                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="https://blkperl.github.io/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/lxc.html">lxc</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/lxc.html">lxc</a> <a href="http://blkperl.github.com/tag/puppet.html">puppet</a> </p>
+<p>In <a href="https://blkperl.github.io/category/lxc.html">lxc</a>. </p>
+<p>tags: <a href="https://blkperl.github.io/tag/lxc.html">lxc</a> <a href="https://blkperl.github.io/tag/puppet.html">puppet</a> </p>
 </footer><!-- /.post-info -->                <p>Creating a Puppet development environement with LXC</p>
-                <a class="readmore" href="http://blkperl.github.com/puppet-dev-with-lxc.html">read more</a>
+                <a class="readmore" href="https://blkperl.github.io/puppet-dev-with-lxc.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
 
             <li><article class="hentry">
                 <header>
-                    <h1><a href="http://blkperl.github.com/split-brain-ganeti.html" rel="bookmark"
+                    <h1><a href="https://blkperl.github.io/split-brain-ganeti.html" rel="bookmark"
                            title="Permalink to Fixing a split brain Ganeti instance">Fixing a split brain Ganeti instance</a></h1>
                 </header>
 
@@ -252,18 +252,18 @@
         </abbr>
 
         <address class="vcard author">
-                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="https://blkperl.github.io/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/ganeti.html">ganeti</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/ganeti.html">ganeti</a> <a href="http://blkperl.github.com/tag/kvm.html">kvm</a> <a href="http://blkperl.github.com/tag/drbd.html">drbd</a> </p>
+<p>In <a href="https://blkperl.github.io/category/ganeti.html">ganeti</a>. </p>
+<p>tags: <a href="https://blkperl.github.io/tag/ganeti.html">ganeti</a> <a href="https://blkperl.github.io/tag/kvm.html">kvm</a> <a href="https://blkperl.github.io/tag/drbd.html">drbd</a> </p>
 </footer><!-- /.post-info -->                <p>Fixing a split brain Ganeti instance</p>
-                <a class="readmore" href="http://blkperl.github.com/split-brain-ganeti.html">read more</a>
+                <a class="readmore" href="https://blkperl.github.io/split-brain-ganeti.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
 
             <li><article class="hentry">
                 <header>
-                    <h1><a href="http://blkperl.github.com/centos_sunray.html" rel="bookmark"
+                    <h1><a href="https://blkperl.github.io/centos_sunray.html" rel="bookmark"
                            title="Permalink to Installing Sunray Software Server (SRSS) on Centos 5.x">Installing Sunray Software Server (SRSS) on Centos 5.x</a></h1>
                 </header>
 
@@ -274,18 +274,18 @@
         </abbr>
 
         <address class="vcard author">
-                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="https://blkperl.github.io/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/centos.html">centos</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/centos.html">centos</a> <a href="http://blkperl.github.com/tag/sunray.html">sunray</a> <a href="http://blkperl.github.com/tag/oracle.html">oracle</a> <a href="http://blkperl.github.com/tag/rhel.html">rhel</a> <a href="http://blkperl.github.com/tag/redhat.html">redhat</a> </p>
+<p>In <a href="https://blkperl.github.io/category/centos.html">centos</a>. </p>
+<p>tags: <a href="https://blkperl.github.io/tag/centos.html">centos</a> <a href="https://blkperl.github.io/tag/sunray.html">sunray</a> <a href="https://blkperl.github.io/tag/oracle.html">oracle</a> <a href="https://blkperl.github.io/tag/rhel.html">rhel</a> <a href="https://blkperl.github.io/tag/redhat.html">redhat</a> </p>
 </footer><!-- /.post-info -->                <p>Installing SunRay Software Server (SRSS) on Centos 5.x</p>
-                <a class="readmore" href="http://blkperl.github.com/centos_sunray.html">read more</a>
+                <a class="readmore" href="https://blkperl.github.io/centos_sunray.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
 
             <li><article class="hentry">
                 <header>
-                    <h1><a href="http://blkperl.github.com/remove_solaris_patch.html" rel="bookmark"
+                    <h1><a href="https://blkperl.github.io/remove_solaris_patch.html" rel="bookmark"
                            title="Permalink to Removing a patch from Solaris 10">Removing a patch from Solaris 10</a></h1>
                 </header>
 
@@ -296,18 +296,18 @@
         </abbr>
 
         <address class="vcard author">
-                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="https://blkperl.github.io/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a> </p>
+<p>In <a href="https://blkperl.github.io/category/solaris.html">solaris</a>. </p>
+<p>tags: <a href="https://blkperl.github.io/tag/solaris.html">solaris</a> </p>
 </footer><!-- /.post-info -->                <p>How to remove a patch on Solaris 10</p>
-                <a class="readmore" href="http://blkperl.github.com/remove_solaris_patch.html">read more</a>
+                <a class="readmore" href="https://blkperl.github.io/remove_solaris_patch.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
 
             <li><article class="hentry">
                 <header>
-                    <h1><a href="http://blkperl.github.com/replace-puppet-ca.html" rel="bookmark"
+                    <h1><a href="https://blkperl.github.io/replace-puppet-ca.html" rel="bookmark"
                            title="Permalink to Replacing a Puppet CA Cert">Replacing a Puppet CA Cert</a></h1>
                 </header>
 
@@ -318,18 +318,18 @@
         </abbr>
 
         <address class="vcard author">
-                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="https://blkperl.github.io/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/puppet.html">puppet</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/puppet.html">puppet</a> <a href="http://blkperl.github.com/tag/openssl.html">openssl</a> </p>
+<p>In <a href="https://blkperl.github.io/category/puppet.html">puppet</a>. </p>
+<p>tags: <a href="https://blkperl.github.io/tag/puppet.html">puppet</a> <a href="https://blkperl.github.io/tag/openssl.html">openssl</a> </p>
 </footer><!-- /.post-info -->                <p>Replacing a Puppet CA cert</p>
-                <a class="readmore" href="http://blkperl.github.com/replace-puppet-ca.html">read more</a>
+                <a class="readmore" href="https://blkperl.github.io/replace-puppet-ca.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
 
             <li><article class="hentry">
                 <header>
-                    <h1><a href="http://blkperl.github.com/evac-ganeti-node.html" rel="bookmark"
+                    <h1><a href="https://blkperl.github.io/evac-ganeti-node.html" rel="bookmark"
                            title="Permalink to Evacuating a Ganeti node for hardware diagnostics">Evacuating a Ganeti node for hardware diagnostics</a></h1>
                 </header>
 
@@ -340,12 +340,12 @@
         </abbr>
 
         <address class="vcard author">
-                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="https://blkperl.github.io/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
-<p>In <a href="http://blkperl.github.com/category/ganeti.html">ganeti</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/ganeti.html">ganeti</a> <a href="http://blkperl.github.com/tag/kvm.html">kvm</a> </p>
+<p>In <a href="https://blkperl.github.io/category/ganeti.html">ganeti</a>. </p>
+<p>tags: <a href="https://blkperl.github.io/tag/ganeti.html">ganeti</a> <a href="https://blkperl.github.io/tag/kvm.html">kvm</a> </p>
 </footer><!-- /.post-info -->                <p>How to evacuate a Ganeti node for hardware diagnostics</p>
-                <a class="readmore" href="http://blkperl.github.com/evac-ganeti-node.html">read more</a>
+                <a class="readmore" href="https://blkperl.github.io/evac-ganeti-node.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
                 </ol><!-- /#posts-list -->
@@ -357,7 +357,7 @@
                 <div class="social">
                         <h2>social</h2>
                         <ul>
-                            <li><a href="http://blkperl.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+                            <li><a href="https://blkperl.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
 
                             <li><a href="https://twitter.com/pdx_blkperl">twitter</a></li>
                             <li><a href="https://github.com/blkperl">github</a></li>
