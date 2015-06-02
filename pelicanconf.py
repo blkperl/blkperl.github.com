@@ -9,8 +9,8 @@ TIMEZONE = 'America/Los_Angeles'
 
 DEFAULT_LANG = u'en'
 
-SOCIAL = (('twitter', 'http://twitter.com/pdx_blkperl'),
-          ('github', 'http://github.com/blkperl'),)
+SOCIAL = (('twitter', 'https://twitter.com/pdx_blkperl'),
+          ('github', 'https://github.com/blkperl'),)
 
 DEFAULT_PAGINATION = 10
 
