@@ -17,7 +17,6 @@
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li class="active"><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
-                    <li><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
                     <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
                     <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
@@ -28,15 +27,15 @@
                 <article>
                     <h1 class="entry-title"><a href="http://blkperl.github.com/split-brain-ganeti.html">Fixing a split brain Ganeti instance</a></h1>
 <footer class="post-info">
-        <abbr class="published" title="2013-05-24T23:08:00">
-                Fri 24 May 2013
+        <abbr class="published" title="2013-05-24T23:08:00-07:00">
+                Published: Fri 24 May 2013
         </abbr>
 
         <address class="vcard author">
-                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
 <p>In <a href="http://blkperl.github.com/category/ganeti.html">ganeti</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/ganeti.html">ganeti</a><a href="http://blkperl.github.com/tag/kvm.html">kvm</a><a href="http://blkperl.github.com/tag/drbd.html">drbd</a></p>
+<p>tags: <a href="http://blkperl.github.com/tag/ganeti.html">ganeti</a> <a href="http://blkperl.github.com/tag/kvm.html">kvm</a> <a href="http://blkperl.github.com/tag/drbd.html">drbd</a> </p>
 </footer><!-- /.post-info --><h2>Recovering from split brain</h2>
 <p>We run a 4 node Ganeti cluster and during a failover of a node some instances got degraded disks. We're not sure how it happened but some quick googling told us it was a split brain and is recoverable. The following is how we confirmed it was split brain and how we repaired the affected instances.</p>
 <h2>You can identify a split brain by the following.</h2>
@@ -75,7 +74,7 @@ gnt-instance replace-disks -n <span class="nv">$another_node</span> <span class=
 
 
 <h2>Verify the disks now</h2>
-<div class="highlight"><pre>gnt-instance info <span class="nv">$instance</span> | grep drbd
+<div class="highlight"><pre>gnt-instance info <span class="nv">$instance</span> <span class="p">|</span> grep drbd
   Disk template: drbd
     - disk/0: drbd8, size 20.0G
       on primary:   /dev/drbd1 <span class="o">(</span>147:1<span class="o">)</span> in sync, status ok
@@ -95,24 +94,24 @@ gnt-instance replace-disks -n <span class="nv">$another_node</span> <span class=
 
                 <div class="entry-content">
 <footer class="post-info">
-        <abbr class="published" title="2013-03-23T12:00:00">
-                Sat 23 March 2013
+        <abbr class="published" title="2013-03-23T12:00:00-07:00">
+                Published: Sat 23 March 2013
         </abbr>
 
         <address class="vcard author">
-                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
 <p>In <a href="http://blkperl.github.com/category/ganeti.html">ganeti</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/ganeti.html">ganeti</a><a href="http://blkperl.github.com/tag/kvm.html">kvm</a></p>
+<p>tags: <a href="http://blkperl.github.com/tag/ganeti.html">ganeti</a> <a href="http://blkperl.github.com/tag/kvm.html">kvm</a> </p>
 </footer><!-- /.post-info -->                <p>How to evacuate a Ganeti node for hardware diagnostics</p>
                 <a class="readmore" href="http://blkperl.github.com/evac-ganeti-node.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-            </ol><!-- /#posts-list -->
+                </ol><!-- /#posts-list -->
 <p class="paginator">
     Page 1 / 1
 </p>
-            </section><!-- /#content -->
+                </section><!-- /#content -->
         <section id="extras" class="body">
                 <div class="social">
                         <h2>social</h2>

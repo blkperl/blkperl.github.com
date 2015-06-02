@@ -17,7 +17,6 @@
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
-                    <li><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
                     <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li class="active"><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
                     <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
@@ -29,20 +28,20 @@
       <h1 class="entry-title">
         <a href="http://blkperl.github.com/replace-puppet-ca.html" rel="bookmark"
            title="Permalink to Replacing a Puppet CA Cert">Replacing a Puppet CA Cert</a></h1>
-<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="//platform.twitter.com/widgets.js"></script>
     </header>
 
     <div class="entry-content">
 <footer class="post-info">
-        <abbr class="published" title="2013-03-26T22:50:00">
-                Tue 26 March 2013
+        <abbr class="published" title="2013-03-26T22:50:00-07:00">
+                Published: Tue 26 March 2013
         </abbr>
 
         <address class="vcard author">
-                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
 <p>In <a href="http://blkperl.github.com/category/puppet.html">puppet</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/puppet.html">puppet</a><a href="http://blkperl.github.com/tag/openssl.html">openssl</a></p>
+<p>tags: <a href="http://blkperl.github.com/tag/puppet.html">puppet</a> <a href="http://blkperl.github.com/tag/openssl.html">openssl</a> </p>
 </footer><!-- /.post-info -->      <p>This is more of a story than a tutorial and I make no claims that this is the "correct" way to replace a Puppet CA cert but this is how we did it.</p>
 <p>Our puppet ca cert was going to expire in about 18 hours so we set aside some time when no one else was working on other systems and madly searched the internet for tidbits of information to replace the cert.</p>
 <p>In our environment we have a Puppet CA Server, a puppetmaster, and puppetdb/dashboard server and about 200 nix clients.</p>
@@ -64,7 +63,7 @@
 
 
 <p>Add any alternate dns names to /etc/puppet/puppet.conf</p>
-<div class="highlight"><pre><span class="n">dns_alt_names</span><span class="o">=</span><span class="n">puppetca</span><span class="p">,</span><span class="n">puppetca</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span><span class="p">,</span><span class="n">zeratul</span><span class="p">.</span><span class="n">cat</span><span class="p">.</span><span class="n">pdx</span><span class="p">.</span><span class="n">edu</span><span class="p">,</span><span class="n">zeratul</span>
+<div class="highlight"><pre>dns_alt_names=puppetca,puppetca.cat.pdx.edu,zeratul.cat.pdx.edu,zeratul
 </pre></div>
 
 
@@ -81,10 +80,10 @@ openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/zeratul.cat.pdx.edu.pem
 
 
 <p>Specifically, the validity field should now be 5 years in the future. You can set the expiration date in puppet.conf before you generate the cert if you want a longer or shorter period.</p>
-<div class="highlight"><pre>openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem | grep -i validity -A 2
+<div class="highlight"><pre>openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem <span class="p">|</span> grep -i validity -A 2
         Validity
-            Not Before: Mar 25 03:20:40 2013 GMT
-            Not After : Mar 25 03:20:40 2018 GMT
+            Not Before: Mar <span class="m">25</span> 03:20:40 <span class="m">2013</span> GMT
+            Not After : Mar <span class="m">25</span> 03:20:40 <span class="m">2018</span> GMT
 </pre></div>
 
 
@@ -140,7 +139,7 @@ service apache2 restart
 <h2>Generate new certs for all your clients</h2>
 <p>Note if any clients are offline during the process they will need a new cert generated and signed when they come back online.</p>
 <p>We used a bash for loop that looked something like this.</p>
-<div class="highlight"><pre>cat alltheclients.txt | xargs -P 10 -n 1 -I box ssh -4 box <span class="s1">&#39;rm -fr /var/lib/puppet/ssl &amp;&amp; puppet agent -t&#39;</span>
+<div class="highlight"><pre>cat alltheclients.txt <span class="p">|</span> xargs -P <span class="m">10</span> -n <span class="m">1</span> -I box ssh -4 box <span class="s1">&#39;rm -fr /var/lib/puppet/ssl &amp;&amp; puppet agent -t&#39;</span>
 </pre></div>
 
 

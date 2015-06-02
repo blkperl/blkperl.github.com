@@ -51,15 +51,15 @@ end&lt;/code&gt;&lt;/pre&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;vagrant up
 Bringing machine &lt;span class="s1"&gt;&amp;#39;sunosfiler&amp;#39;&lt;/span&gt; up with &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt; provider...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt; was not found. Fetching box from specified URL &lt;span class="k"&gt;for&lt;/span&gt;
-the provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;. Note that &lt;span class="k"&gt;if &lt;/span&gt;the URL does not have
-a box &lt;span class="k"&gt;for &lt;/span&gt;this provider, you should interrupt Vagrant now and add
+the provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;. Note that &lt;span class="k"&gt;if&lt;/span&gt; the URL does not have
+a box &lt;span class="k"&gt;for&lt;/span&gt; this provider, you should interrupt Vagrant now and add
 the box yourself. Otherwise Vagrant will attempt to download the
 full box prior to discovering this error.
 Downloading or copying the box...
 Extracting box...te: 25.0M/s, Estimated &lt;span class="nb"&gt;time &lt;/span&gt;remaining: 0:00:01&lt;span class="o"&gt;)&lt;/span&gt;
 Successfully added box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt; with provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;!
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Importing base box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt;...
-&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Matching MAC address &lt;span class="k"&gt;for &lt;/span&gt;NAT networking...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Matching MAC address &lt;span class="k"&gt;for&lt;/span&gt; NAT networking...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting the name of the VM...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting the name of the VM...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Clearing any previously &lt;span class="nb"&gt;set &lt;/span&gt;forwarded ports...
@@ -67,11 +67,11 @@ Successfully added box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Clearing any previously &lt;span class="nb"&gt;set &lt;/span&gt;network interfaces...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Preparing network interfaces based on configuration...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Forwarding ports...
-&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; -- &lt;span class="nv"&gt;22&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; 2222 &lt;span class="o"&gt;(&lt;/span&gt;adapter 1&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; -- &lt;span class="nv"&gt;22&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; &lt;span class="m"&gt;2222&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;adapter 1&lt;span class="o"&gt;)&lt;/span&gt;
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Running any VM customizations...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Booting VM...
-&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Waiting &lt;span class="k"&gt;for &lt;/span&gt;VM to boot. This can take a few minutes.
-&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; VM booted and ready &lt;span class="k"&gt;for &lt;/span&gt;use!
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Waiting &lt;span class="k"&gt;for&lt;/span&gt; VM to boot. This can take a few minutes.
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; VM booted and ready &lt;span class="k"&gt;for&lt;/span&gt; use!
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting hostname...
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -84,25 +84,25 @@ sudo -i
 
 &lt;p&gt;Next let's take a look at the disks that we attached. You can use the format command to list the availible disks.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;format
-Searching &lt;span class="k"&gt;for &lt;/span&gt;disks...done
+Searching &lt;span class="k"&gt;for&lt;/span&gt; disks...done
 
 
 AVAILABLE DISK SELECTIONS:
        0. c7d0 &amp;lt;VBOX HAR-bafb5063-0735aa9-0001-8.00GB&amp;gt;
           /pci@0,0/pci-ide@1,1/ide@0/cmdk@0,0
-       1. c8d0 &amp;lt;VBOX HAR-196ca772-16ab95f-0001 cyl 4093 alt 2 hd 128 sec 32&amp;gt;
+       1. c8d0 &amp;lt;VBOX HAR-196ca772-16ab95f-0001 cyl &lt;span class="m"&gt;4093&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;128&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci-ide@1,1/ide@1/cmdk@0,0
-       2. c9t1d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       2. c9t1d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@1,0
-       3. c9t2d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       3. c9t2d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@2,0
-       4. c9t3d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       4. c9t3d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@3,0
-       5. c9t4d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       5. c9t4d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@4,0
-       6. c9t5d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       6. c9t5d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@5,0
-       7. c9t6d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       7. c9t6d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@6,0
 Specify disk &lt;span class="o"&gt;(&lt;/span&gt;enter its number&lt;span class="o"&gt;)&lt;/span&gt;:
 &lt;/pre&gt;&lt;/div&gt;
@@ -110,7 +110,7 @@ Specify disk &lt;span class="o"&gt;(&lt;/span&gt;enter its number&lt;span class=
 
 &lt;p&gt;You can see that c7d0 and c8d0 are our 8G system disks attached to the IDE controller. Let's attach c8d0 to the rpool and make a mirror.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;zpool attach rpool c7d0 c8d0
-Make sure to &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resilver is &lt;span class="k"&gt;done &lt;/span&gt;before rebooting.
+Make sure to &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until&lt;/span&gt; resilver is &lt;span class="k"&gt;done&lt;/span&gt; before rebooting.
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -151,16 +151,16 @@ zpool status stark
 config:
 
         NAME        STATE     READ WRITE CKSUM
-        stark       ONLINE       0     0     0
-          mirror-0  ONLINE       0     0     0
-            c9t1d0  ONLINE       0     0     0
-            c9t2d0  ONLINE       0     0     0
-          mirror-1  ONLINE       0     0     0
-            c9t3d0  ONLINE       0     0     0
-            c9t4d0  ONLINE       0     0     0
-          mirror-2  ONLINE       0     0     0
-            c9t5d0  ONLINE       0     0     0
-            c9t6d0  ONLINE       0     0     0
+        stark       ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+          mirror-0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t1d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t2d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+          mirror-1  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t3d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t4d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+          mirror-2  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t5d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t6d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
 
 errors: No known data errors
 &lt;/pre&gt;&lt;/div&gt;
@@ -169,7 +169,7 @@ errors: No known data errors
 &lt;p&gt;At this point our storage is configured and we can move on to creating filesystems, setting up services, or running tests.&lt;/p&gt;
 &lt;p&gt;Happy Hacking!&lt;/p&gt;</summary><category term="solaris"></category><category term="vagrant"></category></entry><entry><title>Removing a patch from Solaris 10</title><link href="http://blkperl.github.com/remove_solaris_patch.html" rel="alternate"></link><updated>2013-03-27T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-03-27:remove_solaris_patch.html</id><summary type="html">&lt;p&gt;In this example we removed a custom IDR patch provided by Oracle.&lt;/p&gt;
 &lt;h2&gt;Check to see if the patch is installed&lt;/h2&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;caerbannog# showrev -p | grep 148363
+&lt;div class="highlight"&gt;&lt;pre&gt;caerbannog# showrev -p &lt;span class="p"&gt;|&lt;/span&gt; grep 148363
 Patch: IDR148363-26 Obsoletes:  Requires: 147441-26 Incompatibles: 147441-27 Packages: SUNWnfsckr, SUNWzfskr, SUNWzfsu, SUNWzfsr
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -182,14 +182,14 @@ Loading patches installed on the system...
 
 Done!
 
-Checking patches that you specified &lt;span class="k"&gt;for &lt;/span&gt;removal.
+Checking patches that you specified &lt;span class="k"&gt;for&lt;/span&gt; removal.
 
 Done!
 
 Approved patches will be removed in this order:
 
 IDR148363-26
-Preparing checklist &lt;span class="k"&gt;for &lt;/span&gt;non-global zone check...
+Preparing checklist &lt;span class="k"&gt;for&lt;/span&gt; non-global zone check...
 
 Checking non-global zones...
 
@@ -198,7 +198,7 @@ This patch passes non-global zone check.
 IDR148363-26
 
 
-Summary &lt;span class="k"&gt;for &lt;/span&gt;zones:
+Summary &lt;span class="k"&gt;for&lt;/span&gt; zones:
 
 Zone crisco
 

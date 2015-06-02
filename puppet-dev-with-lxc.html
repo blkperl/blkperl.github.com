@@ -17,7 +17,6 @@
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
-                    <li><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
                     <li class="active"><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
                     <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
@@ -29,20 +28,20 @@
       <h1 class="entry-title">
         <a href="http://blkperl.github.com/puppet-dev-with-lxc.html" rel="bookmark"
            title="Permalink to Creating a Puppet development environment with LXC">Creating a Puppet development environment with LXC</a></h1>
-<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="//platform.twitter.com/widgets.js"></script>
     </header>
 
     <div class="entry-content">
 <footer class="post-info">
-        <abbr class="published" title="2013-05-26T16:00:00">
-                Sun 26 May 2013
+        <abbr class="published" title="2013-05-26T16:00:00-07:00">
+                Published: Sun 26 May 2013
         </abbr>
 
         <address class="vcard author">
-                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
 <p>In <a href="http://blkperl.github.com/category/lxc.html">lxc</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/lxc.html">lxc</a><a href="http://blkperl.github.com/tag/puppet.html">puppet</a></p>
+<p>tags: <a href="http://blkperl.github.com/tag/lxc.html">lxc</a> <a href="http://blkperl.github.com/tag/puppet.html">puppet</a> </p>
 </footer><!-- /.post-info -->      <p>This blog post is about my development setup on my laptop for testing out new software. You will learn how you can easily create LXC containers and connect them to a puppet master in about 20 minutes using the awesome cloning features of LXC.</p>
 <p>LXC is a lightweight container virtualization technology very similar to Solaris zones and FreeBSD jails and is availible on most Linux distributions. To learn more and read the docs check out the links at the bottom of the post. </p>
 <p>The first step is to install it.</p>
@@ -141,7 +140,7 @@ service puppetmaster restart
 
 <p>Auto signing is described in the docs <a href="http://docs.puppetlabs.com/guides/configuring.html#autosignconf">here</a></p>
 <p>There are security concerns with auto signing as described in the docs.</p>
-<div class="highlight"><pre><span class="s">&quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&quot;</span>
+<div class="highlight"><pre>&quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&quot;
 </pre></div>
 
 
@@ -159,10 +158,10 @@ service puppetmaster restart
 <h2>Clone more clients using client0</h2>
 <p>Now we X more clients. For now we will create 5 more.</p>
 <div class="highlight"><pre><span class="c"># LXC will make an exact copy and tweak the network configs</span>
-<span class="k">for </span>i in 1 2 3 4 5; <span class="k">do </span>lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client<span class="nv">$i</span> ; <span class="k">done</span>
+<span class="k">for</span> i in <span class="m">1</span> <span class="m">2</span> <span class="m">3</span> <span class="m">4</span> 5<span class="p">;</span> <span class="k">do</span> lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client<span class="nv">$i</span> <span class="p">;</span> <span class="k">done</span>
 
 <span class="c"># Start your new machines</span>
-<span class="k">for </span>i in 1 2 3 4 5; <span class="k">do </span>lxc-start -n pdxpuppet-client<span class="nv">$i</span> ; <span class="k">done</span>
+<span class="k">for</span> i in <span class="m">1</span> <span class="m">2</span> <span class="m">3</span> <span class="m">4</span> 5<span class="p">;</span> <span class="k">do</span> lxc-start -n pdxpuppet-client<span class="nv">$i</span> <span class="p">;</span> <span class="k">done</span>
 </pre></div>
 
 

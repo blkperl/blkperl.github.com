@@ -17,7 +17,6 @@
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
-                    <li><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
                     <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
                     <li><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
@@ -28,15 +27,15 @@
                 <article>
                     <h1 class="entry-title"><a href="http://blkperl.github.com/vagrant_solaris11.html">Using Vagrant with Solaris 11</a></h1>
 <footer class="post-info">
-        <abbr class="published" title="2014-02-19T23:23:00">
-                Wed 19 February 2014
+        <abbr class="published" title="2014-02-19T23:23:00-08:00">
+                Published: Wed 19 February 2014
         </abbr>
 
         <address class="vcard author">
-                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
 <p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a><a href="http://blkperl.github.com/tag/vagrant.html">vagrant</a></p>
+<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a> <a href="http://blkperl.github.com/tag/vagrant.html">vagrant</a> </p>
 </footer><!-- /.post-info --><p>I finally got Solaris 11 vagrant boxes working! </p>
 <p>First you need to download a Solaris 11 iso from Oracle's website. Then use packer to build a solaris11 box file which is explained in Alan Chalmer's <a href="http://resilvered.blogspot.com/2014/02/solaris-vagrant-packer-and-base-box.html">blog</a>.</p>
 <p>Next we need a Vagrantfile, you can pull down mine and modify it for your needs. Then create an iso directory and place your solaris box image in it.</p>
@@ -89,15 +88,15 @@ end</code></pre>
 <div class="highlight"><pre>vagrant up
 Bringing machine <span class="s1">&#39;sunosfiler&#39;</span> up with <span class="s1">&#39;virtualbox&#39;</span> provider...
 <span class="o">[</span>sunosfiler<span class="o">]</span> Box <span class="s1">&#39;solaris-11.1&#39;</span> was not found. Fetching box from specified URL <span class="k">for</span>
-the provider <span class="s1">&#39;virtualbox&#39;</span>. Note that <span class="k">if </span>the URL does not have
-a box <span class="k">for </span>this provider, you should interrupt Vagrant now and add
+the provider <span class="s1">&#39;virtualbox&#39;</span>. Note that <span class="k">if</span> the URL does not have
+a box <span class="k">for</span> this provider, you should interrupt Vagrant now and add
 the box yourself. Otherwise Vagrant will attempt to download the
 full box prior to discovering this error.
 Downloading or copying the box...
 Extracting box...te: 25.0M/s, Estimated <span class="nb">time </span>remaining: 0:00:01<span class="o">)</span>
 Successfully added box <span class="s1">&#39;solaris-11.1&#39;</span> with provider <span class="s1">&#39;virtualbox&#39;</span>!
 <span class="o">[</span>sunosfiler<span class="o">]</span> Importing base box <span class="s1">&#39;solaris-11.1&#39;</span>...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Matching MAC address <span class="k">for </span>NAT networking...
+<span class="o">[</span>sunosfiler<span class="o">]</span> Matching MAC address <span class="k">for</span> NAT networking...
 <span class="o">[</span>sunosfiler<span class="o">]</span> Setting the name of the VM...
 <span class="o">[</span>sunosfiler<span class="o">]</span> Setting the name of the VM...
 <span class="o">[</span>sunosfiler<span class="o">]</span> Clearing any previously <span class="nb">set </span>forwarded ports...
@@ -105,11 +104,11 @@ Successfully added box <span class="s1">&#39;solaris-11.1&#39;</span> with provi
 <span class="o">[</span>sunosfiler<span class="o">]</span> Clearing any previously <span class="nb">set </span>network interfaces...
 <span class="o">[</span>sunosfiler<span class="o">]</span> Preparing network interfaces based on configuration...
 <span class="o">[</span>sunosfiler<span class="o">]</span> Forwarding ports...
-<span class="o">[</span>sunosfiler<span class="o">]</span> -- <span class="nv">22</span> <span class="o">=</span>&gt; 2222 <span class="o">(</span>adapter 1<span class="o">)</span>
+<span class="o">[</span>sunosfiler<span class="o">]</span> -- <span class="nv">22</span> <span class="o">=</span>&gt; <span class="m">2222</span> <span class="o">(</span>adapter 1<span class="o">)</span>
 <span class="o">[</span>sunosfiler<span class="o">]</span> Running any VM customizations...
 <span class="o">[</span>sunosfiler<span class="o">]</span> Booting VM...
-<span class="o">[</span>sunosfiler<span class="o">]</span> Waiting <span class="k">for </span>VM to boot. This can take a few minutes.
-<span class="o">[</span>sunosfiler<span class="o">]</span> VM booted and ready <span class="k">for </span>use!
+<span class="o">[</span>sunosfiler<span class="o">]</span> Waiting <span class="k">for</span> VM to boot. This can take a few minutes.
+<span class="o">[</span>sunosfiler<span class="o">]</span> VM booted and ready <span class="k">for</span> use!
 <span class="o">[</span>sunosfiler<span class="o">]</span> Setting hostname...
 </pre></div>
 
@@ -122,25 +121,25 @@ sudo -i
 
 <p>Next let's take a look at the disks that we attached. You can use the format command to list the availible disks.</p>
 <div class="highlight"><pre>format
-Searching <span class="k">for </span>disks...done
+Searching <span class="k">for</span> disks...done
 
 
 AVAILABLE DISK SELECTIONS:
        0. c7d0 &lt;VBOX HAR-bafb5063-0735aa9-0001-8.00GB&gt;
           /pci@0,0/pci-ide@1,1/ide@0/cmdk@0,0
-       1. c8d0 &lt;VBOX HAR-196ca772-16ab95f-0001 cyl 4093 alt 2 hd 128 sec 32&gt;
+       1. c8d0 &lt;VBOX HAR-196ca772-16ab95f-0001 cyl <span class="m">4093</span> alt <span class="m">2</span> hd <span class="m">128</span> sec 32&gt;
           /pci@0,0/pci-ide@1,1/ide@1/cmdk@0,0
-       2. c9t1d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+       2. c9t1d0 &lt;ATA-VBOX HARDDISK-1.0 cyl <span class="m">1022</span> alt <span class="m">2</span> hd <span class="m">64</span> sec 32&gt;
           /pci@0,0/pci8086,2829@d/disk@1,0
-       3. c9t2d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+       3. c9t2d0 &lt;ATA-VBOX HARDDISK-1.0 cyl <span class="m">1022</span> alt <span class="m">2</span> hd <span class="m">64</span> sec 32&gt;
           /pci@0,0/pci8086,2829@d/disk@2,0
-       4. c9t3d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+       4. c9t3d0 &lt;ATA-VBOX HARDDISK-1.0 cyl <span class="m">1022</span> alt <span class="m">2</span> hd <span class="m">64</span> sec 32&gt;
           /pci@0,0/pci8086,2829@d/disk@3,0
-       5. c9t4d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+       5. c9t4d0 &lt;ATA-VBOX HARDDISK-1.0 cyl <span class="m">1022</span> alt <span class="m">2</span> hd <span class="m">64</span> sec 32&gt;
           /pci@0,0/pci8086,2829@d/disk@4,0
-       6. c9t5d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+       6. c9t5d0 &lt;ATA-VBOX HARDDISK-1.0 cyl <span class="m">1022</span> alt <span class="m">2</span> hd <span class="m">64</span> sec 32&gt;
           /pci@0,0/pci8086,2829@d/disk@5,0
-       7. c9t6d0 &lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&gt;
+       7. c9t6d0 &lt;ATA-VBOX HARDDISK-1.0 cyl <span class="m">1022</span> alt <span class="m">2</span> hd <span class="m">64</span> sec 32&gt;
           /pci@0,0/pci8086,2829@d/disk@6,0
 Specify disk <span class="o">(</span>enter its number<span class="o">)</span>:
 </pre></div>
@@ -148,7 +147,7 @@ Specify disk <span class="o">(</span>enter its number<span class="o">)</span>:
 
 <p>You can see that c7d0 and c8d0 are our 8G system disks attached to the IDE controller. Let's attach c8d0 to the rpool and make a mirror.</p>
 <div class="highlight"><pre>zpool attach rpool c7d0 c8d0
-Make sure to <span class="nb">wait </span><span class="k">until </span>resilver is <span class="k">done </span>before rebooting.
+Make sure to <span class="nb">wait </span><span class="k">until</span> resilver is <span class="k">done</span> before rebooting.
 </pre></div>
 
 
@@ -189,16 +188,16 @@ zpool status stark
 config:
 
         NAME        STATE     READ WRITE CKSUM
-        stark       ONLINE       0     0     0
-          mirror-0  ONLINE       0     0     0
-            c9t1d0  ONLINE       0     0     0
-            c9t2d0  ONLINE       0     0     0
-          mirror-1  ONLINE       0     0     0
-            c9t3d0  ONLINE       0     0     0
-            c9t4d0  ONLINE       0     0     0
-          mirror-2  ONLINE       0     0     0
-            c9t5d0  ONLINE       0     0     0
-            c9t6d0  ONLINE       0     0     0
+        stark       ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+          mirror-0  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+            c9t1d0  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+            c9t2d0  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+          mirror-1  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+            c9t3d0  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+            c9t4d0  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+          mirror-2  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+            c9t5d0  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
+            c9t6d0  ONLINE       <span class="m">0</span>     <span class="m">0</span>     0
 
 errors: No known data errors
 </pre></div>
@@ -220,24 +219,24 @@ errors: No known data errors
 
                 <div class="entry-content">
 <footer class="post-info">
-        <abbr class="published" title="2013-03-27T12:00:00">
-                Wed 27 March 2013
+        <abbr class="published" title="2013-03-27T12:00:00-07:00">
+                Published: Wed 27 March 2013
         </abbr>
 
         <address class="vcard author">
-                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
 <p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a></p>
+<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a> </p>
 </footer><!-- /.post-info -->                <p>How to remove a patch on Solaris 10</p>
                 <a class="readmore" href="http://blkperl.github.com/remove_solaris_patch.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-            </ol><!-- /#posts-list -->
+                </ol><!-- /#posts-list -->
 <p class="paginator">
     Page 1 / 1
 </p>
-            </section><!-- /#content -->
+                </section><!-- /#content -->
         <section id="extras" class="body">
                 <div class="social">
                         <h2>social</h2>

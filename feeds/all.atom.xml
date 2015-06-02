@@ -16,7 +16,7 @@
 &lt;/ul&gt;
 &lt;h2&gt;Installation&lt;/h2&gt;
 &lt;p&gt;To get started you need to add the leonardo module to your Puppet masters.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;module&lt;/span&gt; &lt;span class="n"&gt;install&lt;/span&gt; &lt;span class="n"&gt;pdxcat&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;leonardo&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;puppet module install pdxcat-leonardo
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -53,7 +53,9 @@
 &lt;div class="gist"&gt;
     &lt;script src='https://gist.github.com/9826382.js'&gt;&lt;/script&gt;
     &lt;noscript&gt;
-        &lt;pre&gt;&lt;code&gt;  $dashboard_root = '/var/www/leonardo/graphs/servers',
+        &lt;pre&gt;&lt;code&gt;class role::leonardo::client {
+
+  $dashboard_root = '/opt/leonardo/graphs/servers',
   $collectd_name  = regsubst($::fqdn, '\.', '_', 'G'),
   $dashboard_dir  = "${dashboard_root}/${::hostname}",
 
@@ -70,10 +72,26 @@
     name               =&gt; $::hostname,
     description        =&gt; 'System Metrics',
     include_properties =&gt; ['common.yaml'],
-    tag                =&gt; "env_${environment}",
+    tag                =&gt; "env_leonardo_${environment}",
     require            =&gt; File[$dashboard_dir],
   }
-&lt;/code&gt;&lt;/pre&gt;
+  
+  # Export a cpu graph
+  @@leonardo::graph { "${::hostname}-cpu":
+    target     =&gt; "${dashboard_dir}/10-cpu.graph",
+    parameters =&gt; { 'title'  =&gt; 'Combined CPU Usage',
+                    'vtitle' =&gt; 'percent',
+                    'area'   =&gt; 'stacked' },
+    fields     =&gt; {
+                    'iowait' =&gt; { 'data' =&gt; "sumSeries(collectd.${collectd_name}.cpu*.cpu-wait)",},
+                    'system' =&gt; { 'data' =&gt; "sumSeries(collectd.${collectd_name}.cpu*.cpu-system)",},
+                    'user'   =&gt; { 'data' =&gt; "sumSeries(collectd.${collectd_name}.cpu*.cpu-user)",},
+                  },
+    tag       =&gt; "env_leonardo_${environment}",
+    require   =&gt; File[$dashboard_dir],
+  }
+
+}&lt;/code&gt;&lt;/pre&gt;
     &lt;/noscript&gt;
 &lt;/div&gt;
 &lt;p&gt;In this particular example, we are exporting a leonardo dashboard file, a directory for each server to hold the graphs, and a CPU graph. Check out the link at the bottom for our current list of graphs that we export on all nodes [4]. It should be a good starting point for getting the more common graphs up and running.&lt;/p&gt;
@@ -133,9 +151,7 @@
 &lt;li&gt;[2] &lt;a href="https://github.com/pdxcat/puppet-module-leonardo/blob/master/tests/init.pp"&gt;Installing Leonardo with Apache example puppet manifest&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;[3] &lt;a href="http://docs.puppetlabs.com/puppet/latest/reference/lang_exported.html#collecting-exported-resources"&gt;Docs on Exported resource collectors&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;[4] &lt;a href="https://gist.github.com/blkperl/10958057"&gt;Full Leonardo client example&lt;/a&gt; (Note: this very much a work in progress)&lt;/li&gt;
-&lt;/ul&gt;</summary><category term="puppet"></category><category term="graphite"></category><category term="leonardo"></category><category term="metrics"></category></entry><entry><title>Intro to Leonardo</title><link href="http://blkperl.github.com/intro_to_leonardo.html" rel="alternate"></link><updated>2014-03-27T22:42:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-03-27:intro_to_leonardo.html</id><summary type="html">&lt;p&gt;&lt;a href="https://github.com/PrFalken/leonardo"&gt;Leonardo&lt;/a&gt; is a Graphite dasboard written by Julien Dehee (&lt;a href="https://github.com/PrFalken"&gt;PrFalken&lt;/a&gt;). It's based on and closely resembles &lt;a href="https://github.com/ripienaar/gdash"&gt;Gdash&lt;/a&gt;. Both Gdash and Leonardo allow the user to specify the construction of graphs through configuration files. Gdash implents its own dsl and Leonardo uses yaml files. This allows you to easily script and automate the construction of dashboards with bash or your favorite configuration management software.&lt;/p&gt;
-&lt;p&gt;I choose to go with Leonardo over Gdash mostly due to lazyness. I was already familar with yaml and it seemed easier to template in Puppet than Gdash's dsl. Additionally, Leonardo shipped with better documentation and &lt;a href="https://github.com/PrFalken/leonardo/issues/2"&gt;when I asked for better examples&lt;/a&gt; PrFalken responded within a few hours with examples and suggestions on how to debug my graphs not rendering.&lt;/p&gt;
-&lt;p&gt;Installing Leonardo is pretty easy. The installation instructions are availible on the &lt;a href="https://github.com/PrFalken/leonardo/blob/master/README.md"&gt;README&lt;/a&gt;. For Puppet users you can use the Puppet module I wrote for it.&lt;/p&gt;</summary><category term="graphite"></category><category term="leonardo"></category><category term="metrics"></category></entry><entry><title>Using Vagrant with Solaris 11</title><link href="http://blkperl.github.com/vagrant_solaris11.html" rel="alternate"></link><updated>2014-02-19T23:23:00-08:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-02-19:vagrant_solaris11.html</id><summary type="html">&lt;p&gt;I finally got Solaris 11 vagrant boxes working! &lt;/p&gt;
+&lt;/ul&gt;</summary><category term="puppet"></category><category term="graphite"></category><category term="leonardo"></category><category term="metrics"></category></entry><entry><title>Using Vagrant with Solaris 11</title><link href="http://blkperl.github.com/vagrant_solaris11.html" rel="alternate"></link><updated>2014-02-19T23:23:00-08:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2014-02-19:vagrant_solaris11.html</id><summary type="html">&lt;p&gt;I finally got Solaris 11 vagrant boxes working! &lt;/p&gt;
 &lt;p&gt;First you need to download a Solaris 11 iso from Oracle's website. Then use packer to build a solaris11 box file which is explained in Alan Chalmer's &lt;a href="http://resilvered.blogspot.com/2014/02/solaris-vagrant-packer-and-base-box.html"&gt;blog&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Next we need a Vagrantfile, you can pull down mine and modify it for your needs. Then create an iso directory and place your solaris box image in it.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;git clone https://gist.github.com/9108604.git
@@ -187,15 +203,15 @@ end&lt;/code&gt;&lt;/pre&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;vagrant up
 Bringing machine &lt;span class="s1"&gt;&amp;#39;sunosfiler&amp;#39;&lt;/span&gt; up with &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt; provider...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt; was not found. Fetching box from specified URL &lt;span class="k"&gt;for&lt;/span&gt;
-the provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;. Note that &lt;span class="k"&gt;if &lt;/span&gt;the URL does not have
-a box &lt;span class="k"&gt;for &lt;/span&gt;this provider, you should interrupt Vagrant now and add
+the provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;. Note that &lt;span class="k"&gt;if&lt;/span&gt; the URL does not have
+a box &lt;span class="k"&gt;for&lt;/span&gt; this provider, you should interrupt Vagrant now and add
 the box yourself. Otherwise Vagrant will attempt to download the
 full box prior to discovering this error.
 Downloading or copying the box...
 Extracting box...te: 25.0M/s, Estimated &lt;span class="nb"&gt;time &lt;/span&gt;remaining: 0:00:01&lt;span class="o"&gt;)&lt;/span&gt;
 Successfully added box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt; with provider &lt;span class="s1"&gt;&amp;#39;virtualbox&amp;#39;&lt;/span&gt;!
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Importing base box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;/span&gt;...
-&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Matching MAC address &lt;span class="k"&gt;for &lt;/span&gt;NAT networking...
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Matching MAC address &lt;span class="k"&gt;for&lt;/span&gt; NAT networking...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting the name of the VM...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting the name of the VM...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Clearing any previously &lt;span class="nb"&gt;set &lt;/span&gt;forwarded ports...
@@ -203,11 +219,11 @@ Successfully added box &lt;span class="s1"&gt;&amp;#39;solaris-11.1&amp;#39;&lt;
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Clearing any previously &lt;span class="nb"&gt;set &lt;/span&gt;network interfaces...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Preparing network interfaces based on configuration...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Forwarding ports...
-&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; -- &lt;span class="nv"&gt;22&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; 2222 &lt;span class="o"&gt;(&lt;/span&gt;adapter 1&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; -- &lt;span class="nv"&gt;22&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; &lt;span class="m"&gt;2222&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;adapter 1&lt;span class="o"&gt;)&lt;/span&gt;
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Running any VM customizations...
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Booting VM...
-&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Waiting &lt;span class="k"&gt;for &lt;/span&gt;VM to boot. This can take a few minutes.
-&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; VM booted and ready &lt;span class="k"&gt;for &lt;/span&gt;use!
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Waiting &lt;span class="k"&gt;for&lt;/span&gt; VM to boot. This can take a few minutes.
+&lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; VM booted and ready &lt;span class="k"&gt;for&lt;/span&gt; use!
 &lt;span class="o"&gt;[&lt;/span&gt;sunosfiler&lt;span class="o"&gt;]&lt;/span&gt; Setting hostname...
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -220,25 +236,25 @@ sudo -i
 
 &lt;p&gt;Next let's take a look at the disks that we attached. You can use the format command to list the availible disks.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;format
-Searching &lt;span class="k"&gt;for &lt;/span&gt;disks...done
+Searching &lt;span class="k"&gt;for&lt;/span&gt; disks...done
 
 
 AVAILABLE DISK SELECTIONS:
        0. c7d0 &amp;lt;VBOX HAR-bafb5063-0735aa9-0001-8.00GB&amp;gt;
           /pci@0,0/pci-ide@1,1/ide@0/cmdk@0,0
-       1. c8d0 &amp;lt;VBOX HAR-196ca772-16ab95f-0001 cyl 4093 alt 2 hd 128 sec 32&amp;gt;
+       1. c8d0 &amp;lt;VBOX HAR-196ca772-16ab95f-0001 cyl &lt;span class="m"&gt;4093&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;128&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci-ide@1,1/ide@1/cmdk@0,0
-       2. c9t1d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       2. c9t1d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@1,0
-       3. c9t2d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       3. c9t2d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@2,0
-       4. c9t3d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       4. c9t3d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@3,0
-       5. c9t4d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       5. c9t4d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@4,0
-       6. c9t5d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       6. c9t5d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@5,0
-       7. c9t6d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl 1022 alt 2 hd 64 sec 32&amp;gt;
+       7. c9t6d0 &amp;lt;ATA-VBOX HARDDISK-1.0 cyl &lt;span class="m"&gt;1022&lt;/span&gt; alt &lt;span class="m"&gt;2&lt;/span&gt; hd &lt;span class="m"&gt;64&lt;/span&gt; sec 32&amp;gt;
           /pci@0,0/pci8086,2829@d/disk@6,0
 Specify disk &lt;span class="o"&gt;(&lt;/span&gt;enter its number&lt;span class="o"&gt;)&lt;/span&gt;:
 &lt;/pre&gt;&lt;/div&gt;
@@ -246,7 +262,7 @@ Specify disk &lt;span class="o"&gt;(&lt;/span&gt;enter its number&lt;span class=
 
 &lt;p&gt;You can see that c7d0 and c8d0 are our 8G system disks attached to the IDE controller. Let's attach c8d0 to the rpool and make a mirror.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;zpool attach rpool c7d0 c8d0
-Make sure to &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resilver is &lt;span class="k"&gt;done &lt;/span&gt;before rebooting.
+Make sure to &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until&lt;/span&gt; resilver is &lt;span class="k"&gt;done&lt;/span&gt; before rebooting.
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -287,16 +303,16 @@ zpool status stark
 config:
 
         NAME        STATE     READ WRITE CKSUM
-        stark       ONLINE       0     0     0
-          mirror-0  ONLINE       0     0     0
-            c9t1d0  ONLINE       0     0     0
-            c9t2d0  ONLINE       0     0     0
-          mirror-1  ONLINE       0     0     0
-            c9t3d0  ONLINE       0     0     0
-            c9t4d0  ONLINE       0     0     0
-          mirror-2  ONLINE       0     0     0
-            c9t5d0  ONLINE       0     0     0
-            c9t6d0  ONLINE       0     0     0
+        stark       ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+          mirror-0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t1d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t2d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+          mirror-1  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t3d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t4d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+          mirror-2  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t5d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
+            c9t6d0  ONLINE       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     0
 
 errors: No known data errors
 &lt;/pre&gt;&lt;/div&gt;
@@ -401,7 +417,7 @@ service puppetmaster restart
 
 &lt;p&gt;Auto signing is described in the docs &lt;a href="http://docs.puppetlabs.com/guides/configuring.html#autosignconf"&gt;here&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;There are security concerns with auto signing as described in the docs.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="s"&gt;&amp;quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&amp;quot;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&amp;quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&amp;quot;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -419,10 +435,10 @@ service puppetmaster restart
 &lt;h2&gt;Clone more clients using client0&lt;/h2&gt;
 &lt;p&gt;Now we X more clients. For now we will create 5 more.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# LXC will make an exact copy and tweak the network configs&lt;/span&gt;
-&lt;span class="k"&gt;for &lt;/span&gt;i in 1 2 3 4 5; &lt;span class="k"&gt;do &lt;/span&gt;lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; ; &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; i in &lt;span class="m"&gt;1&lt;/span&gt; &lt;span class="m"&gt;2&lt;/span&gt; &lt;span class="m"&gt;3&lt;/span&gt; &lt;span class="m"&gt;4&lt;/span&gt; 5&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; &lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;done&lt;/span&gt;
 
 &lt;span class="c"&gt;# Start your new machines&lt;/span&gt;
-&lt;span class="k"&gt;for &lt;/span&gt;i in 1 2 3 4 5; &lt;span class="k"&gt;do &lt;/span&gt;lxc-start -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; ; &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; i in &lt;span class="m"&gt;1&lt;/span&gt; &lt;span class="m"&gt;2&lt;/span&gt; &lt;span class="m"&gt;3&lt;/span&gt; &lt;span class="m"&gt;4&lt;/span&gt; 5&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; lxc-start -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; &lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;done&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -478,7 +494,7 @@ gnt-instance replace-disks -n &lt;span class="nv"&gt;$another_node&lt;/span&gt; 
 
 
 &lt;h2&gt;Verify the disks now&lt;/h2&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;gnt-instance info &lt;span class="nv"&gt;$instance&lt;/span&gt; | grep drbd
+&lt;div class="highlight"&gt;&lt;pre&gt;gnt-instance info &lt;span class="nv"&gt;$instance&lt;/span&gt; &lt;span class="p"&gt;|&lt;/span&gt; grep drbd
   Disk template: drbd
     - disk/0: drbd8, size 20.0G
       on primary:   /dev/drbd1 &lt;span class="o"&gt;(&lt;/span&gt;147:1&lt;span class="o"&gt;)&lt;/span&gt; in sync, status ok
@@ -555,7 +571,7 @@ Enable remote server administration? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;
 
 Configure Sun Ray Kiosk Mode? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt; N
 
-Configure this server &lt;span class="k"&gt;for &lt;/span&gt;a failover group? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt;
+Configure this server &lt;span class="k"&gt;for&lt;/span&gt; a failover group? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt;
 
 About to configure the following software products:
 
@@ -578,11 +594,11 @@ Sun Ray Server Software 4.5
     Sun Ray Kiosk Mode: no
 Continue? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
 
-Enter groupname &lt;span class="k"&gt;for &lt;/span&gt;Windows Connector &lt;span class="o"&gt;[&lt;/span&gt;utwc&lt;span class="o"&gt;]&lt;/span&gt;
+Enter groupname &lt;span class="k"&gt;for&lt;/span&gt; Windows Connector &lt;span class="o"&gt;[&lt;/span&gt;utwc&lt;span class="o"&gt;]&lt;/span&gt;
 
-Enter group ID &lt;span class="o"&gt;(&lt;/span&gt;gid&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="k"&gt;for &lt;/span&gt;the group &lt;span class="o"&gt;[&lt;/span&gt;auto&lt;span class="o"&gt;]&lt;/span&gt;
+Enter group ID &lt;span class="o"&gt;(&lt;/span&gt;gid&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; the group &lt;span class="o"&gt;[&lt;/span&gt;auto&lt;span class="o"&gt;]&lt;/span&gt;
 
-Do you want to configure Firmware downloads &lt;span class="k"&gt;for &lt;/span&gt;Sun Ray clients? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
+Do you want to configure Firmware downloads &lt;span class="k"&gt;for&lt;/span&gt; Sun Ray clients? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -618,7 +634,7 @@ tail -f /var/log/autholog
 &lt;h2&gt;Summary&lt;/h2&gt;
 &lt;p&gt;I havn't had a lot of luck with a consistent installation using the instructions above. If it doesn't work the first time try uninstalling and resintalling the SunRay software. Also I was doing this with SELinux disabled and we already had working SunRays with Solaris 10 so I can't really comment on the dhcp configs or any special network acls we may have in place.&lt;/p&gt;</summary><category term="centos"></category><category term="sunray"></category><category term="oracle"></category><category term="rhel"></category><category term="redhat"></category></entry><entry><title>Removing a patch from Solaris 10</title><link href="http://blkperl.github.com/remove_solaris_patch.html" rel="alternate"></link><updated>2013-03-27T12:00:00-07:00</updated><author><name>William Van Hevelingen</name></author><id>tag:blkperl.github.com,2013-03-27:remove_solaris_patch.html</id><summary type="html">&lt;p&gt;In this example we removed a custom IDR patch provided by Oracle.&lt;/p&gt;
 &lt;h2&gt;Check to see if the patch is installed&lt;/h2&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;caerbannog# showrev -p | grep 148363
+&lt;div class="highlight"&gt;&lt;pre&gt;caerbannog# showrev -p &lt;span class="p"&gt;|&lt;/span&gt; grep 148363
 Patch: IDR148363-26 Obsoletes:  Requires: 147441-26 Incompatibles: 147441-27 Packages: SUNWnfsckr, SUNWzfskr, SUNWzfsu, SUNWzfsr
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -631,14 +647,14 @@ Loading patches installed on the system...
 
 Done!
 
-Checking patches that you specified &lt;span class="k"&gt;for &lt;/span&gt;removal.
+Checking patches that you specified &lt;span class="k"&gt;for&lt;/span&gt; removal.
 
 Done!
 
 Approved patches will be removed in this order:
 
 IDR148363-26
-Preparing checklist &lt;span class="k"&gt;for &lt;/span&gt;non-global zone check...
+Preparing checklist &lt;span class="k"&gt;for&lt;/span&gt; non-global zone check...
 
 Checking non-global zones...
 
@@ -647,7 +663,7 @@ This patch passes non-global zone check.
 IDR148363-26
 
 
-Summary &lt;span class="k"&gt;for &lt;/span&gt;zones:
+Summary &lt;span class="k"&gt;for&lt;/span&gt; zones:
 
 Zone crisco
 
@@ -707,7 +723,7 @@ Done!
 
 
 &lt;p&gt;Add any alternate dns names to /etc/puppet/puppet.conf&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;dns_alt_names&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;dns_alt_names=puppetca,puppetca.cat.pdx.edu,zeratul.cat.pdx.edu,zeratul
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -724,10 +740,10 @@ openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/zeratul.cat.pdx.edu.pem
 
 
 &lt;p&gt;Specifically, the validity field should now be 5 years in the future. You can set the expiration date in puppet.conf before you generate the cert if you want a longer or shorter period.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem | grep -i validity -A 2
+&lt;div class="highlight"&gt;&lt;pre&gt;openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem &lt;span class="p"&gt;|&lt;/span&gt; grep -i validity -A 2
         Validity
-            Not Before: Mar 25 03:20:40 2013 GMT
-            Not After : Mar 25 03:20:40 2018 GMT
+            Not Before: Mar &lt;span class="m"&gt;25&lt;/span&gt; 03:20:40 &lt;span class="m"&gt;2013&lt;/span&gt; GMT
+            Not After : Mar &lt;span class="m"&gt;25&lt;/span&gt; 03:20:40 &lt;span class="m"&gt;2018&lt;/span&gt; GMT
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -783,7 +799,7 @@ service apache2 restart
 &lt;h2&gt;Generate new certs for all your clients&lt;/h2&gt;
 &lt;p&gt;Note if any clients are offline during the process they will need a new cert generated and signed when they come back online.&lt;/p&gt;
 &lt;p&gt;We used a bash for loop that looked something like this.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;cat alltheclients.txt | xargs -P 10 -n 1 -I box ssh -4 box &lt;span class="s1"&gt;&amp;#39;rm -fr /var/lib/puppet/ssl &amp;amp;&amp;amp; puppet agent -t&amp;#39;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cat alltheclients.txt &lt;span class="p"&gt;|&lt;/span&gt; xargs -P &lt;span class="m"&gt;10&lt;/span&gt; -n &lt;span class="m"&gt;1&lt;/span&gt; -I box ssh -4 box &lt;span class="s1"&gt;&amp;#39;rm -fr /var/lib/puppet/ssl &amp;amp;&amp;amp; puppet agent -t&amp;#39;&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -820,7 +836,7 @@ puppet cert sign client2.cat.pdx.edu
 
 &lt;h2&gt;Migrate the primary instances off suspect node&lt;/h2&gt;
 &lt;p&gt;Run the gnt-node migrate command, passing in the node to migrate off of&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;migrate&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-node migrate katana.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -833,29 +849,29 @@ webd.cat.pdx.edu, yermom.cat.pdx.edu, zeratul.cat.pdx.edu?
 y/&lt;span class="o"&gt;[&lt;/span&gt;n&lt;span class="o"&gt;]&lt;/span&gt;/?: y
 Submitted &lt;span class="nb"&gt;jobs &lt;/span&gt;52820, 52821, 52822, 52823, 52824, 52825, 52826, 52827, 52828, 52829, 52830
 &lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
-Waiting &lt;span class="k"&gt;for &lt;/span&gt;job 52825 ...
-Wed Mar 20 10:33:52 2013 Migrating instance crystal.cat.pdx.edu
-Wed Mar 20 10:33:52 2013 * checking disk consistency between &lt;span class="nb"&gt;source &lt;/span&gt;and target
-Wed Mar 20 10:33:56 2013 * switching node claymore.cat.pdx.edu to secondary mode
-Wed Mar 20 10:33:56 2013 * changing into standalone mode
-Wed Mar 20 10:34:58 2013 * changing disks into dual-master mode
-Wed Mar 20 10:35:01 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
-Wed Mar 20 10:35:02 2013 * preparing claymore.cat.pdx.edu to accept the instance
-Wed Mar 20 10:35:03 2013 * migrating instance to claymore.cat.pdx.edu
-Wed Mar 20 10:35:24 2013 * switching node katana.cat.pdx.edu to secondary mode
-Wed Mar 20 10:35:26 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
-Wed Mar 20 10:35:27 2013 * changing into standalone mode
-Wed Mar 20 10:35:27 2013 * changing disks into single-master mode
-Wed Mar 20 10:35:28 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
-Wed Mar 20 10:35:28 2013 * &lt;span class="k"&gt;done&lt;/span&gt;
+Waiting &lt;span class="k"&gt;for&lt;/span&gt; job &lt;span class="m"&gt;52825&lt;/span&gt; ...
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:52 &lt;span class="m"&gt;2013&lt;/span&gt; Migrating instance crystal.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:52 &lt;span class="m"&gt;2013&lt;/span&gt; * checking disk consistency between &lt;span class="nb"&gt;source &lt;/span&gt;and target
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:56 &lt;span class="m"&gt;2013&lt;/span&gt; * switching node claymore.cat.pdx.edu to secondary mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:56 &lt;span class="m"&gt;2013&lt;/span&gt; * changing into standalone mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:34:58 &lt;span class="m"&gt;2013&lt;/span&gt; * changing disks into dual-master mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:01 &lt;span class="m"&gt;2013&lt;/span&gt; * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until&lt;/span&gt; resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:02 &lt;span class="m"&gt;2013&lt;/span&gt; * preparing claymore.cat.pdx.edu to accept the instance
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:03 &lt;span class="m"&gt;2013&lt;/span&gt; * migrating instance to claymore.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:24 &lt;span class="m"&gt;2013&lt;/span&gt; * switching node katana.cat.pdx.edu to secondary mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:26 &lt;span class="m"&gt;2013&lt;/span&gt; * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until&lt;/span&gt; resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:27 &lt;span class="m"&gt;2013&lt;/span&gt; * changing into standalone mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:27 &lt;span class="m"&gt;2013&lt;/span&gt; * changing disks into single-master mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:28 &lt;span class="m"&gt;2013&lt;/span&gt; * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until&lt;/span&gt; resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:28 &lt;span class="m"&gt;2013&lt;/span&gt; * &lt;span class="k"&gt;done&lt;/span&gt;
 &lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Some of my instances failed to migrate properly. This seems to be related to this &lt;a href="https://code.google.com/p/ganeti/issues/detail?id=297"&gt;bug&lt;/a&gt;.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 10:33:16 2013 Migration failed, aborting
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:16 &lt;span class="m"&gt;2013&lt;/span&gt; Migration failed, aborting
 &lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
-Job 52820 has failed: Failure: &lt;span class="nb"&gt;command &lt;/span&gt;execution error:
+Job &lt;span class="m"&gt;52820&lt;/span&gt; has failed: Failure: &lt;span class="nb"&gt;command &lt;/span&gt;execution error:
 Could not migrate instance sapphire.cat.pdx.edu: Failed to migrate instance: Too many &lt;span class="s1"&gt;&amp;#39;info migrate&amp;#39;&lt;/span&gt; broken answers
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -877,16 +893,16 @@ sudo gnt-instance failover sapphire.cat.pdx.edu
 Relocate instance&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; crystal.cat.pdx.edu, emerald.cat.pdx.edu,
 &lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
 y/&lt;span class="o"&gt;[&lt;/span&gt;n&lt;span class="o"&gt;]&lt;/span&gt;/?: y
-Wed Mar 20 11:16:49 2013  - INFO: Evacuating instances from node &lt;span class="s1"&gt;&amp;#39;katana.cat.pdx.edu&amp;#39;&lt;/span&gt;: crystal.cat.pdx.edu, emerald.cat.pdx.edu, fog.cat.pdx.edu, gameandwatch.cat.pdx.edu, l1011.cat.pdx.edu, log.cat.pdx.edu, marauder.cat.pdx.edu, nydus.cat.pdx.edu, panic.cat.pdx.edu, pika.cat.pdx.edu, receptacle.cat.pdx.edu, refinery.cat.pdx.edu, ruby.cat.pdx.edu, sapphire.cat.pdx.edu, void.cat.pdx.edu, warpgate.cat.pdx.edu, weba.cat.pdx.edu, webb.cat.pdx.edu, webc.cat.pdx.edu, webd.cat.pdx.edu, yermom.cat.pdx.edu, zeratul.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 11:16:49 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Evacuating instances from node &lt;span class="s1"&gt;&amp;#39;katana.cat.pdx.edu&amp;#39;&lt;/span&gt;: crystal.cat.pdx.edu, emerald.cat.pdx.edu, fog.cat.pdx.edu, gameandwatch.cat.pdx.edu, l1011.cat.pdx.edu, log.cat.pdx.edu, marauder.cat.pdx.edu, nydus.cat.pdx.edu, panic.cat.pdx.edu, pika.cat.pdx.edu, receptacle.cat.pdx.edu, refinery.cat.pdx.edu, ruby.cat.pdx.edu, sapphire.cat.pdx.edu, void.cat.pdx.edu, warpgate.cat.pdx.edu, weba.cat.pdx.edu, webb.cat.pdx.edu, webc.cat.pdx.edu, webd.cat.pdx.edu, yermom.cat.pdx.edu, zeratul.cat.pdx.edu
 Failure: &lt;span class="nb"&gt;command &lt;/span&gt;execution error:
-Can&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;t get data &lt;span class="k"&gt;for &lt;/span&gt;node katana.cat.pdx.edu: Error 28: Operation timed out after 60910 milliseconds with 0 out of -1 bytes received
+Can&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;t get data &lt;span class="k"&gt;for&lt;/span&gt; node katana.cat.pdx.edu: Error 28: Operation timed out after &lt;span class="m"&gt;60910&lt;/span&gt; milliseconds with &lt;span class="m"&gt;0&lt;/span&gt; out of -1 bytes received
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;If gnt-node evacuate fails for you can evacuate secondaries per instance.&lt;/p&gt;
 &lt;h2&gt;Evacuate the secondaries using gnt-instance&lt;/h2&gt;
 &lt;p&gt;Locate the instances you want to move.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-instance list -o name,pnode,snodes | grep katana
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-instance list -o name,pnode,snodes &lt;span class="p"&gt;|&lt;/span&gt; grep katana
 
 gameandwatch.cat.pdx.edu claymore.cat.pdx.edu katana.cat.pdx.edu
 l1011.cat.pdx.edu        rapier.cat.pdx.edu   katana.cat.pdx.edu
@@ -902,49 +918,49 @@ yermom.cat.pdx.edu       dirk.cat.pdx.edu     katana.cat.pdx.edu
 
 
 &lt;p&gt;The output will look similar to this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 13:24:39 2013 Replacing disk&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; 0 &lt;span class="k"&gt;for &lt;/span&gt;yermom.cat.pdx.edu
-Wed Mar 20 13:24:39 2013 STEP 1/6 Check device existence
-Wed Mar 20 13:24:39 2013  - INFO: Checking disk/0 on rapier.cat.pdx.edu
-Wed Mar 20 13:24:40 2013  - INFO: Checking volume groups
-Wed Mar 20 13:24:40 2013 STEP 2/6 Check peer consistency
-Wed Mar 20 13:24:40 2013  - INFO: Checking disk/0 consistency on node rapier.cat.pdx.edu
-Wed Mar 20 13:24:40 2013 STEP 3/6 Allocate new storage
-Wed Mar 20 13:24:40 2013  - INFO: Adding new &lt;span class="nb"&gt;local &lt;/span&gt;storage on claymore.cat.pdx.edu &lt;span class="k"&gt;for &lt;/span&gt;disk/0
-Wed Mar 20 13:24:44 2013 STEP 4/6 Changing drbd configuration
-Wed Mar 20 13:24:44 2013  - INFO: activating a new drbd on claymore.cat.pdx.edu &lt;span class="k"&gt;for &lt;/span&gt;disk/0
-Wed Mar 20 13:24:48 2013  - INFO: Shutting down drbd &lt;span class="k"&gt;for &lt;/span&gt;disk/0 on old node
-Wed Mar 20 13:24:48 2013  - INFO: Detaching primary drbds from the network &lt;span class="o"&gt;(=&lt;/span&gt;&amp;gt; standalone&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:24:49 2013  - INFO: Updating instance configuration
-Wed Mar 20 13:24:49 2013  - INFO: Attaching primary drbds to new secondary &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;standalone&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; connected&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:24:50 2013 STEP 5/6 Sync devices
-Wed Mar 20 13:24:50 2013  - INFO: Waiting &lt;span class="k"&gt;for &lt;/span&gt;instance yermom.cat.pdx.edu to sync disks.
-Wed Mar 20 13:24:55 2013  - INFO: - device disk/0:  0.50% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 34s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:26:00 2013  - INFO: - device disk/0:  6.90% &lt;span class="k"&gt;done&lt;/span&gt;, 15m 53s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:27:07 2013  - INFO: - device disk/0: 13.40% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 42s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:28:26 2013  - INFO: - device disk/0: 21.00% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 1s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:29:30 2013  - INFO: - device disk/0: 27.00% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 32s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:30:35 2013  - INFO: - device disk/0: 33.20% &lt;span class="k"&gt;done&lt;/span&gt;, 11m 27s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:31:40 2013  - INFO: - device disk/0: 39.50% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 56s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:32:44 2013  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:32:44 2013  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:33:49 2013  - INFO: - device disk/0: 52.10% &lt;span class="k"&gt;done&lt;/span&gt;, 8m 2s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:34:54 2013  - INFO: - device disk/0: 58.30% &lt;span class="k"&gt;done&lt;/span&gt;, 6m 54s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:35:58 2013  - INFO: - device disk/0: 64.60% &lt;span class="k"&gt;done&lt;/span&gt;, 5m 48s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:37:03 2013  - INFO: - device disk/0: 70.90% &lt;span class="k"&gt;done&lt;/span&gt;, 4m 52s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:38:08 2013  - INFO: - device disk/0: 77.20% &lt;span class="k"&gt;done&lt;/span&gt;, 3m 50s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:39:15 2013  - INFO: - device disk/0: 83.70% &lt;span class="k"&gt;done&lt;/span&gt;, 2m 33s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:40:20 2013  - INFO: - device disk/0: 90.00% &lt;span class="k"&gt;done&lt;/span&gt;, 1m 44s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:41:25 2013  - INFO: - device disk/0: 96.30% &lt;span class="k"&gt;done&lt;/span&gt;, 37s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:42:04 2013  - INFO: Instance yermom.cat.pdx.edu&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;s disks are in sync.
-Wed Mar 20 13:42:04 2013 STEP 6/6 Removing old storage
-Wed Mar 20 13:42:04 2013  - INFO: Remove logical volumes &lt;span class="k"&gt;for &lt;/span&gt;0
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:39 &lt;span class="m"&gt;2013&lt;/span&gt; Replacing disk&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="m"&gt;0&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; yermom.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:39 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 1/6 Check device existence
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:39 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Checking disk/0 on rapier.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Checking volume groups
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 2/6 Check peer consistency
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Checking disk/0 consistency on node rapier.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 3/6 Allocate new storage
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Adding new &lt;span class="nb"&gt;local &lt;/span&gt;storage on claymore.cat.pdx.edu &lt;span class="k"&gt;for&lt;/span&gt; disk/0
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:44 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 4/6 Changing drbd configuration
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:44 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: activating a new drbd on claymore.cat.pdx.edu &lt;span class="k"&gt;for&lt;/span&gt; disk/0
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:48 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Shutting down drbd &lt;span class="k"&gt;for&lt;/span&gt; disk/0 on old node
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:48 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Detaching primary drbds from the network &lt;span class="o"&gt;(=&lt;/span&gt;&amp;gt; standalone&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:49 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Updating instance configuration
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:49 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Attaching primary drbds to new secondary &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;standalone&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; connected&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:50 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 5/6 Sync devices
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:50 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Waiting &lt;span class="k"&gt;for&lt;/span&gt; instance yermom.cat.pdx.edu to sync disks.
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:55 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0:  0.50% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 34s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:26:00 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0:  6.90% &lt;span class="k"&gt;done&lt;/span&gt;, 15m 53s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:27:07 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 13.40% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 42s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:28:26 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 21.00% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 1s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:29:30 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 27.00% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 32s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:30:35 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 33.20% &lt;span class="k"&gt;done&lt;/span&gt;, 11m 27s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:31:40 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 39.50% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 56s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:32:44 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:32:44 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:33:49 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 52.10% &lt;span class="k"&gt;done&lt;/span&gt;, 8m 2s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:34:54 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 58.30% &lt;span class="k"&gt;done&lt;/span&gt;, 6m 54s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:35:58 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 64.60% &lt;span class="k"&gt;done&lt;/span&gt;, 5m 48s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:37:03 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 70.90% &lt;span class="k"&gt;done&lt;/span&gt;, 4m 52s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:38:08 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 77.20% &lt;span class="k"&gt;done&lt;/span&gt;, 3m 50s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:39:15 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 83.70% &lt;span class="k"&gt;done&lt;/span&gt;, 2m 33s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:40:20 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 90.00% &lt;span class="k"&gt;done&lt;/span&gt;, 1m 44s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:41:25 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 96.30% &lt;span class="k"&gt;done&lt;/span&gt;, 37s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:42:04 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Instance yermom.cat.pdx.edu&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;s disks are in sync.
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:42:04 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 6/6 Removing old storage
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:42:04 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Remove logical volumes &lt;span class="k"&gt;for&lt;/span&gt; 0
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Sometimes you may get an lvm error that looks like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 13:15:18 2013  - WARNING: Can&lt;span class="s1"&gt;&amp;#39;t remove old LV: Can&amp;#39;&lt;/span&gt;t lvremove: exited with &lt;span class="nb"&gt;exit &lt;/span&gt;code 5 -   Unable to deactivate open ganeti-9bc9b089--59f3-
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:15:18 &lt;span class="m"&gt;2013&lt;/span&gt;  - WARNING: Can&lt;span class="s1"&gt;&amp;#39;t remove old LV: Can&amp;#39;&lt;/span&gt;t lvremove: exited with &lt;span class="nb"&gt;exit &lt;/span&gt;code &lt;span class="m"&gt;5&lt;/span&gt; -   Unable to deactivate open ganeti-9bc9b089--59f3-
 -4512--9a09--e7f756caadbe.disk0_meta &lt;span class="o"&gt;(&lt;/span&gt;252:7&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;  Unable to deactivate logical volume &lt;span class="s2"&gt;&amp;quot;9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;
-Wed Mar 20 13:15:18 2013       Hint: remove unused LVs manually
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:15:18 &lt;span class="m"&gt;2013&lt;/span&gt;       Hint: remove unused LVs manually
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -964,8 +980,8 @@ lvremove /dev/mapper/ganeti-9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta
 &lt;p&gt;gnt-cluster verify should now display that one node is offline&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;gnt-cluster verify 
 &lt;span class="o"&gt;[&lt;/span&gt;..&lt;span class="o"&gt;]&lt;/span&gt;
-Sat Mar 23 14:18:14 2013 * Other Notes
-Sat Mar 23 14:18:14 2013   - NOTICE: 1 offline node&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; found.
+Sat Mar &lt;span class="m"&gt;23&lt;/span&gt; 14:18:14 &lt;span class="m"&gt;2013&lt;/span&gt; * Other Notes
+Sat Mar &lt;span class="m"&gt;23&lt;/span&gt; 14:18:14 &lt;span class="m"&gt;2013&lt;/span&gt;   - NOTICE: &lt;span class="m"&gt;1&lt;/span&gt; offline node&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; found.
 &lt;span class="o"&gt;[&lt;/span&gt;..&lt;span class="o"&gt;]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 

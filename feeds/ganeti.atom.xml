@@ -37,7 +37,7 @@ gnt-instance replace-disks -n &lt;span class="nv"&gt;$another_node&lt;/span&gt; 
 
 
 &lt;h2&gt;Verify the disks now&lt;/h2&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;gnt-instance info &lt;span class="nv"&gt;$instance&lt;/span&gt; | grep drbd
+&lt;div class="highlight"&gt;&lt;pre&gt;gnt-instance info &lt;span class="nv"&gt;$instance&lt;/span&gt; &lt;span class="p"&gt;|&lt;/span&gt; grep drbd
   Disk template: drbd
     - disk/0: drbd8, size 20.0G
       on primary:   /dev/drbd1 &lt;span class="o"&gt;(&lt;/span&gt;147:1&lt;span class="o"&gt;)&lt;/span&gt; in sync, status ok
@@ -60,7 +60,7 @@ gnt-instance replace-disks -n &lt;span class="nv"&gt;$another_node&lt;/span&gt; 
 
 &lt;h2&gt;Migrate the primary instances off suspect node&lt;/h2&gt;
 &lt;p&gt;Run the gnt-node migrate command, passing in the node to migrate off of&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;sudo&lt;/span&gt; &lt;span class="n"&gt;gnt&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="n"&gt;migrate&lt;/span&gt; &lt;span class="n"&gt;katana&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-node migrate katana.cat.pdx.edu
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -73,29 +73,29 @@ webd.cat.pdx.edu, yermom.cat.pdx.edu, zeratul.cat.pdx.edu?
 y/&lt;span class="o"&gt;[&lt;/span&gt;n&lt;span class="o"&gt;]&lt;/span&gt;/?: y
 Submitted &lt;span class="nb"&gt;jobs &lt;/span&gt;52820, 52821, 52822, 52823, 52824, 52825, 52826, 52827, 52828, 52829, 52830
 &lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
-Waiting &lt;span class="k"&gt;for &lt;/span&gt;job 52825 ...
-Wed Mar 20 10:33:52 2013 Migrating instance crystal.cat.pdx.edu
-Wed Mar 20 10:33:52 2013 * checking disk consistency between &lt;span class="nb"&gt;source &lt;/span&gt;and target
-Wed Mar 20 10:33:56 2013 * switching node claymore.cat.pdx.edu to secondary mode
-Wed Mar 20 10:33:56 2013 * changing into standalone mode
-Wed Mar 20 10:34:58 2013 * changing disks into dual-master mode
-Wed Mar 20 10:35:01 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
-Wed Mar 20 10:35:02 2013 * preparing claymore.cat.pdx.edu to accept the instance
-Wed Mar 20 10:35:03 2013 * migrating instance to claymore.cat.pdx.edu
-Wed Mar 20 10:35:24 2013 * switching node katana.cat.pdx.edu to secondary mode
-Wed Mar 20 10:35:26 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
-Wed Mar 20 10:35:27 2013 * changing into standalone mode
-Wed Mar 20 10:35:27 2013 * changing disks into single-master mode
-Wed Mar 20 10:35:28 2013 * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until &lt;/span&gt;resync is &lt;span class="k"&gt;done&lt;/span&gt;
-Wed Mar 20 10:35:28 2013 * &lt;span class="k"&gt;done&lt;/span&gt;
+Waiting &lt;span class="k"&gt;for&lt;/span&gt; job &lt;span class="m"&gt;52825&lt;/span&gt; ...
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:52 &lt;span class="m"&gt;2013&lt;/span&gt; Migrating instance crystal.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:52 &lt;span class="m"&gt;2013&lt;/span&gt; * checking disk consistency between &lt;span class="nb"&gt;source &lt;/span&gt;and target
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:56 &lt;span class="m"&gt;2013&lt;/span&gt; * switching node claymore.cat.pdx.edu to secondary mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:56 &lt;span class="m"&gt;2013&lt;/span&gt; * changing into standalone mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:34:58 &lt;span class="m"&gt;2013&lt;/span&gt; * changing disks into dual-master mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:01 &lt;span class="m"&gt;2013&lt;/span&gt; * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until&lt;/span&gt; resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:02 &lt;span class="m"&gt;2013&lt;/span&gt; * preparing claymore.cat.pdx.edu to accept the instance
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:03 &lt;span class="m"&gt;2013&lt;/span&gt; * migrating instance to claymore.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:24 &lt;span class="m"&gt;2013&lt;/span&gt; * switching node katana.cat.pdx.edu to secondary mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:26 &lt;span class="m"&gt;2013&lt;/span&gt; * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until&lt;/span&gt; resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:27 &lt;span class="m"&gt;2013&lt;/span&gt; * changing into standalone mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:27 &lt;span class="m"&gt;2013&lt;/span&gt; * changing disks into single-master mode
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:28 &lt;span class="m"&gt;2013&lt;/span&gt; * &lt;span class="nb"&gt;wait &lt;/span&gt;&lt;span class="k"&gt;until&lt;/span&gt; resync is &lt;span class="k"&gt;done&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:35:28 &lt;span class="m"&gt;2013&lt;/span&gt; * &lt;span class="k"&gt;done&lt;/span&gt;
 &lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Some of my instances failed to migrate properly. This seems to be related to this &lt;a href="https://code.google.com/p/ganeti/issues/detail?id=297"&gt;bug&lt;/a&gt;.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 10:33:16 2013 Migration failed, aborting
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 10:33:16 &lt;span class="m"&gt;2013&lt;/span&gt; Migration failed, aborting
 &lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
-Job 52820 has failed: Failure: &lt;span class="nb"&gt;command &lt;/span&gt;execution error:
+Job &lt;span class="m"&gt;52820&lt;/span&gt; has failed: Failure: &lt;span class="nb"&gt;command &lt;/span&gt;execution error:
 Could not migrate instance sapphire.cat.pdx.edu: Failed to migrate instance: Too many &lt;span class="s1"&gt;&amp;#39;info migrate&amp;#39;&lt;/span&gt; broken answers
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -117,16 +117,16 @@ sudo gnt-instance failover sapphire.cat.pdx.edu
 Relocate instance&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; crystal.cat.pdx.edu, emerald.cat.pdx.edu,
 &lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
 y/&lt;span class="o"&gt;[&lt;/span&gt;n&lt;span class="o"&gt;]&lt;/span&gt;/?: y
-Wed Mar 20 11:16:49 2013  - INFO: Evacuating instances from node &lt;span class="s1"&gt;&amp;#39;katana.cat.pdx.edu&amp;#39;&lt;/span&gt;: crystal.cat.pdx.edu, emerald.cat.pdx.edu, fog.cat.pdx.edu, gameandwatch.cat.pdx.edu, l1011.cat.pdx.edu, log.cat.pdx.edu, marauder.cat.pdx.edu, nydus.cat.pdx.edu, panic.cat.pdx.edu, pika.cat.pdx.edu, receptacle.cat.pdx.edu, refinery.cat.pdx.edu, ruby.cat.pdx.edu, sapphire.cat.pdx.edu, void.cat.pdx.edu, warpgate.cat.pdx.edu, weba.cat.pdx.edu, webb.cat.pdx.edu, webc.cat.pdx.edu, webd.cat.pdx.edu, yermom.cat.pdx.edu, zeratul.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 11:16:49 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Evacuating instances from node &lt;span class="s1"&gt;&amp;#39;katana.cat.pdx.edu&amp;#39;&lt;/span&gt;: crystal.cat.pdx.edu, emerald.cat.pdx.edu, fog.cat.pdx.edu, gameandwatch.cat.pdx.edu, l1011.cat.pdx.edu, log.cat.pdx.edu, marauder.cat.pdx.edu, nydus.cat.pdx.edu, panic.cat.pdx.edu, pika.cat.pdx.edu, receptacle.cat.pdx.edu, refinery.cat.pdx.edu, ruby.cat.pdx.edu, sapphire.cat.pdx.edu, void.cat.pdx.edu, warpgate.cat.pdx.edu, weba.cat.pdx.edu, webb.cat.pdx.edu, webc.cat.pdx.edu, webd.cat.pdx.edu, yermom.cat.pdx.edu, zeratul.cat.pdx.edu
 Failure: &lt;span class="nb"&gt;command &lt;/span&gt;execution error:
-Can&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;t get data &lt;span class="k"&gt;for &lt;/span&gt;node katana.cat.pdx.edu: Error 28: Operation timed out after 60910 milliseconds with 0 out of -1 bytes received
+Can&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;t get data &lt;span class="k"&gt;for&lt;/span&gt; node katana.cat.pdx.edu: Error 28: Operation timed out after &lt;span class="m"&gt;60910&lt;/span&gt; milliseconds with &lt;span class="m"&gt;0&lt;/span&gt; out of -1 bytes received
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;If gnt-node evacuate fails for you can evacuate secondaries per instance.&lt;/p&gt;
 &lt;h2&gt;Evacuate the secondaries using gnt-instance&lt;/h2&gt;
 &lt;p&gt;Locate the instances you want to move.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-instance list -o name,pnode,snodes | grep katana
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo gnt-instance list -o name,pnode,snodes &lt;span class="p"&gt;|&lt;/span&gt; grep katana
 
 gameandwatch.cat.pdx.edu claymore.cat.pdx.edu katana.cat.pdx.edu
 l1011.cat.pdx.edu        rapier.cat.pdx.edu   katana.cat.pdx.edu
@@ -142,49 +142,49 @@ yermom.cat.pdx.edu       dirk.cat.pdx.edu     katana.cat.pdx.edu
 
 
 &lt;p&gt;The output will look similar to this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 13:24:39 2013 Replacing disk&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; 0 &lt;span class="k"&gt;for &lt;/span&gt;yermom.cat.pdx.edu
-Wed Mar 20 13:24:39 2013 STEP 1/6 Check device existence
-Wed Mar 20 13:24:39 2013  - INFO: Checking disk/0 on rapier.cat.pdx.edu
-Wed Mar 20 13:24:40 2013  - INFO: Checking volume groups
-Wed Mar 20 13:24:40 2013 STEP 2/6 Check peer consistency
-Wed Mar 20 13:24:40 2013  - INFO: Checking disk/0 consistency on node rapier.cat.pdx.edu
-Wed Mar 20 13:24:40 2013 STEP 3/6 Allocate new storage
-Wed Mar 20 13:24:40 2013  - INFO: Adding new &lt;span class="nb"&gt;local &lt;/span&gt;storage on claymore.cat.pdx.edu &lt;span class="k"&gt;for &lt;/span&gt;disk/0
-Wed Mar 20 13:24:44 2013 STEP 4/6 Changing drbd configuration
-Wed Mar 20 13:24:44 2013  - INFO: activating a new drbd on claymore.cat.pdx.edu &lt;span class="k"&gt;for &lt;/span&gt;disk/0
-Wed Mar 20 13:24:48 2013  - INFO: Shutting down drbd &lt;span class="k"&gt;for &lt;/span&gt;disk/0 on old node
-Wed Mar 20 13:24:48 2013  - INFO: Detaching primary drbds from the network &lt;span class="o"&gt;(=&lt;/span&gt;&amp;gt; standalone&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:24:49 2013  - INFO: Updating instance configuration
-Wed Mar 20 13:24:49 2013  - INFO: Attaching primary drbds to new secondary &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;standalone&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; connected&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:24:50 2013 STEP 5/6 Sync devices
-Wed Mar 20 13:24:50 2013  - INFO: Waiting &lt;span class="k"&gt;for &lt;/span&gt;instance yermom.cat.pdx.edu to sync disks.
-Wed Mar 20 13:24:55 2013  - INFO: - device disk/0:  0.50% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 34s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:26:00 2013  - INFO: - device disk/0:  6.90% &lt;span class="k"&gt;done&lt;/span&gt;, 15m 53s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:27:07 2013  - INFO: - device disk/0: 13.40% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 42s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:28:26 2013  - INFO: - device disk/0: 21.00% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 1s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:29:30 2013  - INFO: - device disk/0: 27.00% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 32s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:30:35 2013  - INFO: - device disk/0: 33.20% &lt;span class="k"&gt;done&lt;/span&gt;, 11m 27s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:31:40 2013  - INFO: - device disk/0: 39.50% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 56s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:32:44 2013  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:32:44 2013  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:33:49 2013  - INFO: - device disk/0: 52.10% &lt;span class="k"&gt;done&lt;/span&gt;, 8m 2s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:34:54 2013  - INFO: - device disk/0: 58.30% &lt;span class="k"&gt;done&lt;/span&gt;, 6m 54s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:35:58 2013  - INFO: - device disk/0: 64.60% &lt;span class="k"&gt;done&lt;/span&gt;, 5m 48s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:37:03 2013  - INFO: - device disk/0: 70.90% &lt;span class="k"&gt;done&lt;/span&gt;, 4m 52s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:38:08 2013  - INFO: - device disk/0: 77.20% &lt;span class="k"&gt;done&lt;/span&gt;, 3m 50s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:39:15 2013  - INFO: - device disk/0: 83.70% &lt;span class="k"&gt;done&lt;/span&gt;, 2m 33s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:40:20 2013  - INFO: - device disk/0: 90.00% &lt;span class="k"&gt;done&lt;/span&gt;, 1m 44s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:41:25 2013  - INFO: - device disk/0: 96.30% &lt;span class="k"&gt;done&lt;/span&gt;, 37s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
-Wed Mar 20 13:42:04 2013  - INFO: Instance yermom.cat.pdx.edu&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;s disks are in sync.
-Wed Mar 20 13:42:04 2013 STEP 6/6 Removing old storage
-Wed Mar 20 13:42:04 2013  - INFO: Remove logical volumes &lt;span class="k"&gt;for &lt;/span&gt;0
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:39 &lt;span class="m"&gt;2013&lt;/span&gt; Replacing disk&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="m"&gt;0&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; yermom.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:39 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 1/6 Check device existence
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:39 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Checking disk/0 on rapier.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Checking volume groups
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 2/6 Check peer consistency
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Checking disk/0 consistency on node rapier.cat.pdx.edu
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 3/6 Allocate new storage
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:40 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Adding new &lt;span class="nb"&gt;local &lt;/span&gt;storage on claymore.cat.pdx.edu &lt;span class="k"&gt;for&lt;/span&gt; disk/0
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:44 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 4/6 Changing drbd configuration
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:44 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: activating a new drbd on claymore.cat.pdx.edu &lt;span class="k"&gt;for&lt;/span&gt; disk/0
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:48 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Shutting down drbd &lt;span class="k"&gt;for&lt;/span&gt; disk/0 on old node
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:48 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Detaching primary drbds from the network &lt;span class="o"&gt;(=&lt;/span&gt;&amp;gt; standalone&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:49 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Updating instance configuration
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:49 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Attaching primary drbds to new secondary &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;standalone&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; connected&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:50 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 5/6 Sync devices
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:50 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Waiting &lt;span class="k"&gt;for&lt;/span&gt; instance yermom.cat.pdx.edu to sync disks.
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:24:55 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0:  0.50% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 34s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:26:00 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0:  6.90% &lt;span class="k"&gt;done&lt;/span&gt;, 15m 53s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:27:07 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 13.40% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 42s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:28:26 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 21.00% &lt;span class="k"&gt;done&lt;/span&gt;, 13m 1s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:29:30 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 27.00% &lt;span class="k"&gt;done&lt;/span&gt;, 14m 32s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:30:35 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 33.20% &lt;span class="k"&gt;done&lt;/span&gt;, 11m 27s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:31:40 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 39.50% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 56s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:32:44 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:32:44 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 45.80% &lt;span class="k"&gt;done&lt;/span&gt;, 9m 20s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:33:49 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 52.10% &lt;span class="k"&gt;done&lt;/span&gt;, 8m 2s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:34:54 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 58.30% &lt;span class="k"&gt;done&lt;/span&gt;, 6m 54s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:35:58 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 64.60% &lt;span class="k"&gt;done&lt;/span&gt;, 5m 48s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:37:03 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 70.90% &lt;span class="k"&gt;done&lt;/span&gt;, 4m 52s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:38:08 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 77.20% &lt;span class="k"&gt;done&lt;/span&gt;, 3m 50s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:39:15 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 83.70% &lt;span class="k"&gt;done&lt;/span&gt;, 2m 33s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:40:20 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 90.00% &lt;span class="k"&gt;done&lt;/span&gt;, 1m 44s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:41:25 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: - device disk/0: 96.30% &lt;span class="k"&gt;done&lt;/span&gt;, 37s remaining &lt;span class="o"&gt;(&lt;/span&gt;estimated&lt;span class="o"&gt;)&lt;/span&gt;
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:42:04 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Instance yermom.cat.pdx.edu&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;s disks are in sync.
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:42:04 &lt;span class="m"&gt;2013&lt;/span&gt; STEP 6/6 Removing old storage
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:42:04 &lt;span class="m"&gt;2013&lt;/span&gt;  - INFO: Remove logical volumes &lt;span class="k"&gt;for&lt;/span&gt; 0
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Sometimes you may get an lvm error that looks like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar 20 13:15:18 2013  - WARNING: Can&lt;span class="s1"&gt;&amp;#39;t remove old LV: Can&amp;#39;&lt;/span&gt;t lvremove: exited with &lt;span class="nb"&gt;exit &lt;/span&gt;code 5 -   Unable to deactivate open ganeti-9bc9b089--59f3-
+&lt;div class="highlight"&gt;&lt;pre&gt;Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:15:18 &lt;span class="m"&gt;2013&lt;/span&gt;  - WARNING: Can&lt;span class="s1"&gt;&amp;#39;t remove old LV: Can&amp;#39;&lt;/span&gt;t lvremove: exited with &lt;span class="nb"&gt;exit &lt;/span&gt;code &lt;span class="m"&gt;5&lt;/span&gt; -   Unable to deactivate open ganeti-9bc9b089--59f3-
 -4512--9a09--e7f756caadbe.disk0_meta &lt;span class="o"&gt;(&lt;/span&gt;252:7&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;  Unable to deactivate logical volume &lt;span class="s2"&gt;&amp;quot;9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;
-Wed Mar 20 13:15:18 2013       Hint: remove unused LVs manually
+Wed Mar &lt;span class="m"&gt;20&lt;/span&gt; 13:15:18 &lt;span class="m"&gt;2013&lt;/span&gt;       Hint: remove unused LVs manually
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -204,8 +204,8 @@ lvremove /dev/mapper/ganeti-9bc9b089-59f3-4512-9a09-e7f756caadbe.disk0_meta
 &lt;p&gt;gnt-cluster verify should now display that one node is offline&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;gnt-cluster verify 
 &lt;span class="o"&gt;[&lt;/span&gt;..&lt;span class="o"&gt;]&lt;/span&gt;
-Sat Mar 23 14:18:14 2013 * Other Notes
-Sat Mar 23 14:18:14 2013   - NOTICE: 1 offline node&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; found.
+Sat Mar &lt;span class="m"&gt;23&lt;/span&gt; 14:18:14 &lt;span class="m"&gt;2013&lt;/span&gt; * Other Notes
+Sat Mar &lt;span class="m"&gt;23&lt;/span&gt; 14:18:14 &lt;span class="m"&gt;2013&lt;/span&gt;   - NOTICE: &lt;span class="m"&gt;1&lt;/span&gt; offline node&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;/span&gt; found.
 &lt;span class="o"&gt;[&lt;/span&gt;..&lt;span class="o"&gt;]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 

@@ -17,7 +17,6 @@
                 <nav><ul>
                     <li><a href="http://blkperl.github.com/category/centos.html">centos</a></li>
                     <li><a href="http://blkperl.github.com/category/ganeti.html">ganeti</a></li>
-                    <li><a href="http://blkperl.github.com/category/graphite.html">graphite</a></li>
                     <li><a href="http://blkperl.github.com/category/lxc.html">lxc</a></li>
                     <li><a href="http://blkperl.github.com/category/puppet.html">puppet</a></li>
                     <li class="active"><a href="http://blkperl.github.com/category/solaris.html">solaris</a></li>
@@ -29,23 +28,23 @@
       <h1 class="entry-title">
         <a href="http://blkperl.github.com/remove_solaris_patch.html" rel="bookmark"
            title="Permalink to Removing a patch from Solaris 10">Removing a patch from Solaris 10</a></h1>
-<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="pdx_blkperl">Tweet</a><script type="text/javascript" src="//platform.twitter.com/widgets.js"></script>
     </header>
 
     <div class="entry-content">
 <footer class="post-info">
-        <abbr class="published" title="2013-03-27T12:00:00">
-                Wed 27 March 2013
+        <abbr class="published" title="2013-03-27T12:00:00-07:00">
+                Published: Wed 27 March 2013
         </abbr>
 
         <address class="vcard author">
-                By <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
+                By                         <a class="url fn" href="http://blkperl.github.com/author/william-van-hevelingen.html">William Van Hevelingen</a>
         </address>
 <p>In <a href="http://blkperl.github.com/category/solaris.html">solaris</a>. </p>
-<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a></p>
+<p>tags: <a href="http://blkperl.github.com/tag/solaris.html">solaris</a> </p>
 </footer><!-- /.post-info -->      <p>In this example we removed a custom IDR patch provided by Oracle.</p>
 <h2>Check to see if the patch is installed</h2>
-<div class="highlight"><pre>caerbannog# showrev -p | grep 148363
+<div class="highlight"><pre>caerbannog# showrev -p <span class="p">|</span> grep 148363
 Patch: IDR148363-26 Obsoletes:  Requires: 147441-26 Incompatibles: 147441-27 Packages: SUNWnfsckr, SUNWzfskr, SUNWzfsu, SUNWzfsr
 </pre></div>
 
@@ -58,14 +57,14 @@ Loading patches installed on the system...
 
 Done!
 
-Checking patches that you specified <span class="k">for </span>removal.
+Checking patches that you specified <span class="k">for</span> removal.
 
 Done!
 
 Approved patches will be removed in this order:
 
 IDR148363-26
-Preparing checklist <span class="k">for </span>non-global zone check...
+Preparing checklist <span class="k">for</span> non-global zone check...
 
 Checking non-global zones...
 
@@ -74,7 +73,7 @@ This patch passes non-global zone check.
 IDR148363-26
 
 
-Summary <span class="k">for </span>zones:
+Summary <span class="k">for</span> zones:
 
 Zone crisco
 

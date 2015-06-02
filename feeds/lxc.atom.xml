@@ -97,7 +97,7 @@ service puppetmaster restart
 
 &lt;p&gt;Auto signing is described in the docs &lt;a href="http://docs.puppetlabs.com/guides/configuring.html#autosignconf"&gt;here&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;There are security concerns with auto signing as described in the docs.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="s"&gt;&amp;quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&amp;quot;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&amp;quot;As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.&amp;quot;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -115,10 +115,10 @@ service puppetmaster restart
 &lt;h2&gt;Clone more clients using client0&lt;/h2&gt;
 &lt;p&gt;Now we X more clients. For now we will create 5 more.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# LXC will make an exact copy and tweak the network configs&lt;/span&gt;
-&lt;span class="k"&gt;for &lt;/span&gt;i in 1 2 3 4 5; &lt;span class="k"&gt;do &lt;/span&gt;lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; ; &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; i in &lt;span class="m"&gt;1&lt;/span&gt; &lt;span class="m"&gt;2&lt;/span&gt; &lt;span class="m"&gt;3&lt;/span&gt; &lt;span class="m"&gt;4&lt;/span&gt; 5&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; lxc-clone -o pdxpuppet-client0 -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; &lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;done&lt;/span&gt;
 
 &lt;span class="c"&gt;# Start your new machines&lt;/span&gt;
-&lt;span class="k"&gt;for &lt;/span&gt;i in 1 2 3 4 5; &lt;span class="k"&gt;do &lt;/span&gt;lxc-start -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; ; &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; i in &lt;span class="m"&gt;1&lt;/span&gt; &lt;span class="m"&gt;2&lt;/span&gt; &lt;span class="m"&gt;3&lt;/span&gt; &lt;span class="m"&gt;4&lt;/span&gt; 5&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; lxc-start -n pdxpuppet-client&lt;span class="nv"&gt;$i&lt;/span&gt; &lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;done&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 

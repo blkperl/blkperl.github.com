@@ -71,7 +71,7 @@ Enable remote server administration? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;
 
 Configure Sun Ray Kiosk Mode? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt; N
 
-Configure this server &lt;span class="k"&gt;for &lt;/span&gt;a failover group? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt;
+Configure this server &lt;span class="k"&gt;for&lt;/span&gt; a failover group? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;N&lt;span class="o"&gt;]&lt;/span&gt;
 
 About to configure the following software products:
 
@@ -94,11 +94,11 @@ Sun Ray Server Software 4.5
     Sun Ray Kiosk Mode: no
 Continue? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
 
-Enter groupname &lt;span class="k"&gt;for &lt;/span&gt;Windows Connector &lt;span class="o"&gt;[&lt;/span&gt;utwc&lt;span class="o"&gt;]&lt;/span&gt;
+Enter groupname &lt;span class="k"&gt;for&lt;/span&gt; Windows Connector &lt;span class="o"&gt;[&lt;/span&gt;utwc&lt;span class="o"&gt;]&lt;/span&gt;
 
-Enter group ID &lt;span class="o"&gt;(&lt;/span&gt;gid&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="k"&gt;for &lt;/span&gt;the group &lt;span class="o"&gt;[&lt;/span&gt;auto&lt;span class="o"&gt;]&lt;/span&gt;
+Enter group ID &lt;span class="o"&gt;(&lt;/span&gt;gid&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; the group &lt;span class="o"&gt;[&lt;/span&gt;auto&lt;span class="o"&gt;]&lt;/span&gt;
 
-Do you want to configure Firmware downloads &lt;span class="k"&gt;for &lt;/span&gt;Sun Ray clients? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
+Do you want to configure Firmware downloads &lt;span class="k"&gt;for&lt;/span&gt; Sun Ray clients? &lt;span class="o"&gt;(&lt;/span&gt;Y/N&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;Y&lt;span class="o"&gt;]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 

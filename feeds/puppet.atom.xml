@@ -16,7 +16,7 @@
 &lt;/ul&gt;
 &lt;h2&gt;Installation&lt;/h2&gt;
 &lt;p&gt;To get started you need to add the leonardo module to your Puppet masters.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;puppet&lt;/span&gt; &lt;span class="n"&gt;module&lt;/span&gt; &lt;span class="n"&gt;install&lt;/span&gt; &lt;span class="n"&gt;pdxcat&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;leonardo&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;puppet module install pdxcat-leonardo
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -53,7 +53,9 @@
 &lt;div class="gist"&gt;
     &lt;script src='https://gist.github.com/9826382.js'&gt;&lt;/script&gt;
     &lt;noscript&gt;
-        &lt;pre&gt;&lt;code&gt;  $dashboard_root = '/var/www/leonardo/graphs/servers',
+        &lt;pre&gt;&lt;code&gt;class role::leonardo::client {
+
+  $dashboard_root = '/opt/leonardo/graphs/servers',
   $collectd_name  = regsubst($::fqdn, '\.', '_', 'G'),
   $dashboard_dir  = "${dashboard_root}/${::hostname}",
 
@@ -70,10 +72,26 @@
     name               =&gt; $::hostname,
     description        =&gt; 'System Metrics',
     include_properties =&gt; ['common.yaml'],
-    tag                =&gt; "env_${environment}",
+    tag                =&gt; "env_leonardo_${environment}",
     require            =&gt; File[$dashboard_dir],
   }
-&lt;/code&gt;&lt;/pre&gt;
+  
+  # Export a cpu graph
+  @@leonardo::graph { "${::hostname}-cpu":
+    target     =&gt; "${dashboard_dir}/10-cpu.graph",
+    parameters =&gt; { 'title'  =&gt; 'Combined CPU Usage',
+                    'vtitle' =&gt; 'percent',
+                    'area'   =&gt; 'stacked' },
+    fields     =&gt; {
+                    'iowait' =&gt; { 'data' =&gt; "sumSeries(collectd.${collectd_name}.cpu*.cpu-wait)",},
+                    'system' =&gt; { 'data' =&gt; "sumSeries(collectd.${collectd_name}.cpu*.cpu-system)",},
+                    'user'   =&gt; { 'data' =&gt; "sumSeries(collectd.${collectd_name}.cpu*.cpu-user)",},
+                  },
+    tag       =&gt; "env_leonardo_${environment}",
+    require   =&gt; File[$dashboard_dir],
+  }
+
+}&lt;/code&gt;&lt;/pre&gt;
     &lt;/noscript&gt;
 &lt;/div&gt;
 &lt;p&gt;In this particular example, we are exporting a leonardo dashboard file, a directory for each server to hold the graphs, and a CPU graph. Check out the link at the bottom for our current list of graphs that we export on all nodes [4]. It should be a good starting point for getting the more common graphs up and running.&lt;/p&gt;
@@ -154,7 +172,7 @@
 
 
 &lt;p&gt;Add any alternate dns names to /etc/puppet/puppet.conf&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;dns_alt_names&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;puppetca&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cat&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pdx&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;edu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;zeratul&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;dns_alt_names=puppetca,puppetca.cat.pdx.edu,zeratul.cat.pdx.edu,zeratul
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -171,10 +189,10 @@ openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/zeratul.cat.pdx.edu.pem
 
 
 &lt;p&gt;Specifically, the validity field should now be 5 years in the future. You can set the expiration date in puppet.conf before you generate the cert if you want a longer or shorter period.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem | grep -i validity -A 2
+&lt;div class="highlight"&gt;&lt;pre&gt;openssl x509 -text -noout -in /var/lib/puppet/ssl/certs/ca.pem &lt;span class="p"&gt;|&lt;/span&gt; grep -i validity -A 2
         Validity
-            Not Before: Mar 25 03:20:40 2013 GMT
-            Not After : Mar 25 03:20:40 2018 GMT
+            Not Before: Mar &lt;span class="m"&gt;25&lt;/span&gt; 03:20:40 &lt;span class="m"&gt;2013&lt;/span&gt; GMT
+            Not After : Mar &lt;span class="m"&gt;25&lt;/span&gt; 03:20:40 &lt;span class="m"&gt;2018&lt;/span&gt; GMT
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -230,7 +248,7 @@ service apache2 restart
 &lt;h2&gt;Generate new certs for all your clients&lt;/h2&gt;
 &lt;p&gt;Note if any clients are offline during the process they will need a new cert generated and signed when they come back online.&lt;/p&gt;
 &lt;p&gt;We used a bash for loop that looked something like this.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;cat alltheclients.txt | xargs -P 10 -n 1 -I box ssh -4 box &lt;span class="s1"&gt;&amp;#39;rm -fr /var/lib/puppet/ssl &amp;amp;&amp;amp; puppet agent -t&amp;#39;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cat alltheclients.txt &lt;span class="p"&gt;|&lt;/span&gt; xargs -P &lt;span class="m"&gt;10&lt;/span&gt; -n &lt;span class="m"&gt;1&lt;/span&gt; -I box ssh -4 box &lt;span class="s1"&gt;&amp;#39;rm -fr /var/lib/puppet/ssl &amp;amp;&amp;amp; puppet agent -t&amp;#39;&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
